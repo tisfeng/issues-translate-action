@@ -27,9 +27,9 @@ import * as github from '@actions/github'
 import franc from 'franc-min'
 import {
   buildTranslateBody,
-  detectIsEnglish,
   getTranslationContext,
   isInputEnabled,
+  isEnglishText,
   shouldHandleEvent
 } from '../src/main'
 
@@ -223,16 +223,16 @@ describe('issues translate action helpers', () => {
   test('detects english text', () => {
     mockedFranc.mockReturnValue('eng')
 
-    expect(detectIsEnglish('Please review this change.')).toBe(true)
+    expect(isEnglishText('Please review this change.')).toBe(true)
   })
 
   test('detects non-english text', () => {
     mockedFranc.mockReturnValue('cmn')
 
-    expect(detectIsEnglish('请帮忙看一下这里')).toBe(false)
+    expect(isEnglishText('请帮忙看一下这里')).toBe(false)
   })
 
   test('treats null text as already handled', () => {
-    expect(detectIsEnglish(null)).toBe(true)
+    expect(isEnglishText(null)).toBe(true)
   })
 })

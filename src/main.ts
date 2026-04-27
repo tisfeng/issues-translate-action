@@ -7,6 +7,8 @@ const ISSUE_COMMENT_EVENT = 'issue_comment'
 const ISSUES_EVENT = 'issues'
 const REVIEW_COMMENT_EVENT = 'pull_request_review_comment'
 const COMMENT_TITLE_SEPARATOR = '@@===='
+const SINGLE_PART_TRANSLATION = 1
+const DUAL_PART_TRANSLATION = 2
 const DEFAULT_BOT_NOTE =
   "Bot detected the issue body's language is not English, translate it automatically. 👯👭🏻🧑‍🤝‍🧑👫🧑🏿‍🤝‍🧑🏻👩🏾‍🤝‍👨🏿👬🏿"
 const DEFAULT_BOT_TOKEN_BASE64 =
@@ -207,15 +209,15 @@ async function run(): Promise<void> {
 
     let botNote = DEFAULT_BOT_NOTE
     const isModifyTitle = isInputEnabled(core.getInput('IS_MODIFY_TITLE'))
-    let translateOrigin = ''
+    let translateOrigin: string
     let needCommitComment = originComment !== null && originComment !== 'null'
     let needCommitTitle = originTitle !== null && originTitle !== 'null'
 
-    if (originComment !== null && detectIsEnglish(originComment)) {
+    if (originComment !== null && isEnglishText(originComment)) {
       needCommitComment = false
       core.info('Detect the issue comment body is english already, ignore.')
     }
-    if (originTitle !== null && detectIsEnglish(originTitle)) {
+    if (originTitle !== null && isEnglishText(originTitle)) {
       needCommitTitle = false
       core.info('Detect the issue title body is english already, ignore.')
     }
@@ -274,12 +276,12 @@ async function run(): Promise<void> {
 
     core.info(`translate body is: ${translateTmp}`)
 
-    if (translateBody.length === 1) {
+    if (translateBody.length === SINGLE_PART_TRANSLATION) {
       translateComment = translateBody[0].trim()
       if (translateComment === originComment) {
         needCommitComment = false
       }
-    } else if (translateBody.length === 2) {
+    } else if (translateBody.length === DUAL_PART_TRANSLATION) {
       translateComment = translateBody[0].trim()
       translateTitle = translateBody[1].trim()
       if (translateComment === originComment) {
@@ -322,7 +324,7 @@ async function run(): Promise<void> {
   }
 }
 
-export function detectIsEnglish(body: string | null): boolean {
+export function isEnglishText(body: string | null): boolean {
   if (body === null) {
     return true
   }

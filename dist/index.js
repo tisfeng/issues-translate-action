@@ -974,7 +974,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.detectIsEnglish = exports.isInputEnabled = exports.buildTranslateBody = exports.getTranslationContext = exports.shouldHandleEvent = void 0;
+exports.isEnglishText = exports.isInputEnabled = exports.buildTranslateBody = exports.getTranslationContext = exports.shouldHandleEvent = void 0;
 const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
 const google_translate_api_1 = __importDefault(__webpack_require__(771));
@@ -983,6 +983,8 @@ const ISSUE_COMMENT_EVENT = 'issue_comment';
 const ISSUES_EVENT = 'issues';
 const REVIEW_COMMENT_EVENT = 'pull_request_review_comment';
 const COMMENT_TITLE_SEPARATOR = '@@====';
+const SINGLE_PART_TRANSLATION = 1;
+const DUAL_PART_TRANSLATION = 2;
 const DEFAULT_BOT_NOTE = "Bot detected the issue body's language is not English, translate it automatically. 👯👭🏻🧑‍🤝‍🧑👫🧑🏿‍🤝‍🧑🏻👩🏾‍🤝‍👨🏿👬🏿";
 const DEFAULT_BOT_TOKEN_BASE64 = 'Y2I4M2EyNjE0NThlMzIwMjA3MGJhODRlY2I5NTM0ZjBmYTEwM2ZlNg==';
 const DEFAULT_BOT_LOGIN_NAME = 'Issues-translate-bot';
@@ -1092,14 +1094,14 @@ function run() {
             const { issueNumber, issueUser, originComment, originTitle, commentTarget } = translationContext;
             let botNote = DEFAULT_BOT_NOTE;
             const isModifyTitle = isInputEnabled(core.getInput('IS_MODIFY_TITLE'));
-            let translateOrigin = '';
+            let translateOrigin;
             let needCommitComment = originComment !== null && originComment !== 'null';
             let needCommitTitle = originTitle !== null && originTitle !== 'null';
-            if (originComment !== null && detectIsEnglish(originComment)) {
+            if (originComment !== null && isEnglishText(originComment)) {
                 needCommitComment = false;
                 core.info('Detect the issue comment body is english already, ignore.');
             }
-            if (originTitle !== null && detectIsEnglish(originTitle)) {
+            if (originTitle !== null && isEnglishText(originTitle)) {
                 needCommitTitle = false;
                 core.info('Detect the issue title body is english already, ignore.');
             }
@@ -1148,13 +1150,13 @@ function run() {
             let translateComment = null;
             let translateTitle = null;
             core.info(`translate body is: ${translateTmp}`);
-            if (translateBody.length === 1) {
+            if (translateBody.length === SINGLE_PART_TRANSLATION) {
                 translateComment = translateBody[0].trim();
                 if (translateComment === originComment) {
                     needCommitComment = false;
                 }
             }
-            else if (translateBody.length === 2) {
+            else if (translateBody.length === DUAL_PART_TRANSLATION) {
                 translateComment = translateBody[0].trim();
                 translateTitle = translateBody[1].trim();
                 if (translateComment === originComment) {
@@ -1185,7 +1187,7 @@ function run() {
         }
     });
 }
-function detectIsEnglish(body) {
+function isEnglishText(body) {
     if (body === null) {
         return true;
     }
@@ -1199,7 +1201,7 @@ function detectIsEnglish(body) {
     core.info(`Detect comment body language result is: ${detectResult}`);
     return detectResult === 'eng';
 }
-exports.detectIsEnglish = detectIsEnglish;
+exports.isEnglishText = isEnglishText;
 function translateIssueOrigin(body) {
     return __awaiter(this, void 0, void 0, function* () {
         let result = '';
