@@ -1,5 +1,5 @@
 name: 'Issues Translator'
-description: 'The action for translating Non-English issues content to English.'
+description: 'The action for translating non-English issues, PR conversation comments, and PR review comments to English.'
 branding:
   icon: 'disc'
   color: 'orange'

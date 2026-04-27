@@ -1,27 +1,63 @@
-import {wait} from '../src/wait'
-import * as process from 'process'
-import * as cp from 'child_process'
-import * as path from 'path'
+import * as github from '@actions/github'
+import {
+  buildTranslateBody,
+  getTranslationContext,
+  shouldHandleEvent
+} from '../src/main'
 
-test('throws invalid number', async () => {
-  const input = parseInt('foo', 10)
-  await expect(wait(input)).rejects.toThrow('milliseconds not a number')
-})
+describe('issues translate action helpers', () => {
+  test('handles created pull request review comments', () => {
+    expect(shouldHandleEvent('pull_request_review_comment', 'created')).toBe(true)
+    expect(shouldHandleEvent('pull_request_review_comment', 'edited')).toBe(false)
+  })
 
-test('wait 500 ms', async () => {
-  const start = new Date()
-  await wait(500)
-  const end = new Date()
-  var delta = Math.abs(end.getTime() - start.getTime())
-  expect(delta).toBeGreaterThan(450)
-})
+  test('extracts review comment translation context', () => {
+    const context = {
+      eventName: 'pull_request_review_comment',
+      payload: {
+        action: 'created',
+        pull_request: {
+          number: 7,
+          html_url: 'https://github.com/owner/repo/pull/7'
+        },
+        comment: {
+          id: 99,
+          body: '你好，麻烦看下这里',
+          html_url:
+            'https://github.com/owner/repo/pull/7#discussion_r3148663226',
+          user: {
+            login: 'contributor'
+          }
+        }
+      }
+    } as typeof github.context
 
-// shows how the runner will run a javascript action with env / stdout protocol
-test('test runs', () => {
-  process.env['INPUT_MILLISECONDS'] = '500'
-  const ip = path.join(__dirname, '..', 'lib', 'main.js')
-  const options: cp.ExecSyncOptions = {
-    env: process.env
-  }
-  console.log(cp.execSync(`node ${ip}`, options).toString())
+    expect(getTranslationContext(context)).toEqual({
+      issueNumber: 7,
+      issueUser: 'contributor',
+      originComment: '你好，麻烦看下这里',
+      originTitle: null,
+      commentTarget: {
+        kind: 'pull_request_review_comment',
+        pullNumber: 7,
+        commentId: 99,
+        htmlUrl:
+          'https://github.com/owner/repo/pull/7#discussion_r3148663226'
+      }
+    })
+  })
+
+  test('builds a translated issue comment with title when title is not modified', () => {
+    const comment = buildTranslateBody(
+      'Please check this change.',
+      'Fix build failure',
+      true,
+      true,
+      false,
+      'Bot note'
+    )
+
+    expect(comment).toContain('**Title:** Fix build failure')
+    expect(comment).toContain('Please check this change.')
+  })
 })
