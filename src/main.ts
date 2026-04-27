@@ -138,6 +138,14 @@ export function buildTranslateBody(
   botNote: string
 ): string | null {
   if (!needCommitComment) {
+    if (!isModifyTitle && needCommitTitle && translateTitle !== null) {
+      return ` 
+> ${botNote}      
+----  
+**Title:** ${translateTitle}    
+      `
+    }
+
     return null
   }
 
@@ -160,7 +168,12 @@ ${translateComment ?? ''}
 
 async function run(): Promise<void> {
   try {
-    if (!shouldHandleEvent(github.context.eventName, github.context.payload.action)) {
+    if (
+      !shouldHandleEvent(
+        github.context.eventName,
+        github.context.payload.action
+      )
+    ) {
       core.info(
         `The action only supports issue_comment(created), issues(opened), and pull_request_review_comment(created); received ${github.context.eventName}(${github.context.payload.action}), return`
       )
@@ -169,7 +182,9 @@ async function run(): Promise<void> {
 
     const translationContext = getTranslationContext(github.context)
     if (translationContext === null) {
-      core.warning('Can not resolve the translation context from the event payload.')
+      core.warning(
+        'Can not resolve the translation context from the event payload.'
+      )
       return
     }
 
@@ -226,7 +241,9 @@ async function run(): Promise<void> {
       botLoginName = botInfo.data.login
     }
     if (botLoginName === issueUser) {
-      core.info(`The comment user is bot ${botLoginName} himself, ignore return.`)
+      core.info(
+        `The comment user is bot ${botLoginName} himself, ignore return.`
+      )
       return
     }
 
@@ -313,16 +330,16 @@ export function detectIsEnglish(body: string | null): boolean {
 
 async function translateIssueOrigin(body: string): Promise<string> {
   let result = ''
-  await translate(body, {to: 'en'})
-    .then(res => {
-      if (res.text !== body) {
-        result = res.text
-      }
-    })
-    .catch((error: Error) => {
-      core.error(error)
-      core.setFailed(error.message)
-    })
+  try {
+    const response = await translate(body, {to: 'en'})
+    if (response.text !== body) {
+      result = response.text
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    core.error(errorMessage)
+    core.setFailed(errorMessage)
+  }
   return result
 }
 
@@ -345,7 +362,9 @@ async function createComment(
       }
     )
     core.info(
-      `complete to push translate review comment: ${body} in ${commentTarget.htmlUrl ?? ''} `
+      `complete to push translate review comment: ${body} in ${
+        commentTarget.htmlUrl ?? ''
+      } `
     )
     return
   }
@@ -357,7 +376,9 @@ async function createComment(
     body
   })
   core.info(
-    `complete to push translate issue comment: ${body} in ${commentTarget.htmlUrl ?? ''} `
+    `complete to push translate issue comment: ${body} in ${
+      commentTarget.htmlUrl ?? ''
+    } `
   )
 }
 
@@ -374,7 +395,9 @@ async function modifyTitle(
     issue_number: issueNumber,
     title
   })
-  core.info(`complete to modify translate issue title: ${title} in ${issueUrl} `)
+  core.info(
+    `complete to modify translate issue title: ${title} in ${issueUrl} `
+  )
 }
 
 if (require.main === module) {

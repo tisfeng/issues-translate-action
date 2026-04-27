@@ -1,3 +1,28 @@
+jest.mock(
+  '@actions/core',
+  () => ({
+    info: jest.fn(),
+    warning: jest.fn(),
+    error: jest.fn(),
+    setFailed: jest.fn(),
+    setOutput: jest.fn(),
+    getInput: jest.fn(() => '')
+  }),
+  {virtual: true}
+)
+
+jest.mock(
+  '@actions/github',
+  () => ({
+    context: {},
+    getOctokit: jest.fn()
+  }),
+  {virtual: true}
+)
+
+jest.mock('@tomsun28/google-translate-api', () => jest.fn(), {virtual: true})
+jest.mock('franc-min', () => jest.fn(() => 'cmn'), {virtual: true})
+
 import * as github from '@actions/github'
 import {
   buildTranslateBody,
@@ -30,7 +55,7 @@ describe('issues translate action helpers', () => {
           }
         }
       }
-    } as typeof github.context
+    } as unknown as typeof github.context
 
     expect(getTranslationContext(context)).toEqual({
       issueNumber: 7,
