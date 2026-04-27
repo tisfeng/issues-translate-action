@@ -1070,6 +1070,12 @@ ${translateComment !== null && translateComment !== void 0 ? translateComment : 
       `;
 }
 exports.buildTranslateBody = buildTranslateBody;
+function isInputEnabled(input) {
+    const normalizedInput = input.trim().toLowerCase();
+    return (normalizedInput === 'true' ||
+        normalizedInput === '1' ||
+        normalizedInput === 'yes');
+}
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -1084,7 +1090,7 @@ function run() {
             }
             const { issueNumber, issueUser, originComment, originTitle, commentTarget } = translationContext;
             let botNote = DEFAULT_BOT_NOTE;
-            const isModifyTitle = core.getInput('IS_MODIFY_TITLE') === 'true';
+            const isModifyTitle = isInputEnabled(core.getInput('IS_MODIFY_TITLE'));
             let translateOrigin = '';
             let needCommitComment = originComment !== null && originComment !== 'null';
             let needCommitTitle = originTitle !== null && originTitle !== 'null';
@@ -1158,7 +1164,7 @@ function run() {
                 }
             }
             else {
-                core.setFailed(`the translateBody is ${translateTmp}`);
+                core.setFailed(`Translation failed: unexpected number of parts in translated body. Expected 1 or 2 parts, got ${translateBody.length}. Body: ${translateTmp}`);
                 return;
             }
             if (octokit === null) {

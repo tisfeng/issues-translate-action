@@ -166,6 +166,15 @@ ${translateComment ?? ''}
       `
 }
 
+function isInputEnabled(input: string): boolean {
+  const normalizedInput = input.trim().toLowerCase()
+  return (
+    normalizedInput === 'true' ||
+    normalizedInput === '1' ||
+    normalizedInput === 'yes'
+  )
+}
+
 async function run(): Promise<void> {
   try {
     if (
@@ -197,7 +206,7 @@ async function run(): Promise<void> {
     } = translationContext
 
     let botNote = DEFAULT_BOT_NOTE
-    const isModifyTitle = core.getInput('IS_MODIFY_TITLE') === 'true'
+    const isModifyTitle = isInputEnabled(core.getInput('IS_MODIFY_TITLE'))
     let translateOrigin = ''
     let needCommitComment = originComment !== null && originComment !== 'null'
     let needCommitTitle = originTitle !== null && originTitle !== 'null'
@@ -280,7 +289,9 @@ async function run(): Promise<void> {
         needCommitTitle = false
       }
     } else {
-      core.setFailed(`the translateBody is ${translateTmp}`)
+      core.setFailed(
+        `Translation failed: unexpected number of parts in translated body. Expected 1 or 2 parts, got ${translateBody.length}. Body: ${translateTmp}`
+      )
       return
     }
 
