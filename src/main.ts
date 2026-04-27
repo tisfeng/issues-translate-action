@@ -166,7 +166,7 @@ ${translateComment ?? ''}
       `
 }
 
-function isInputEnabled(input: string): boolean {
+export function isInputEnabled(input: string): boolean {
   const normalizedInput = input.trim().toLowerCase()
   return (
     normalizedInput === 'true' ||

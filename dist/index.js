@@ -974,7 +974,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.detectIsEnglish = exports.buildTranslateBody = exports.getTranslationContext = exports.shouldHandleEvent = void 0;
+exports.detectIsEnglish = exports.isInputEnabled = exports.buildTranslateBody = exports.getTranslationContext = exports.shouldHandleEvent = void 0;
 const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
 const google_translate_api_1 = __importDefault(__webpack_require__(771));
@@ -1076,6 +1076,7 @@ function isInputEnabled(input) {
         normalizedInput === '1' ||
         normalizedInput === 'yes');
 }
+exports.isInputEnabled = isInputEnabled;
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
