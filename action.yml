@@ -1,9 +1,9 @@
-name: 'Issues Translator'
+name: 'Issues and PRs Translator'
 description: 'The action for translating non-English issues, PR conversation comments, and PR review comments to English.'
 branding:
   icon: 'disc'
   color: 'orange'
-author: 'tomsun28'
+author: 'tisfeng'
 inputs:
   BOT_GITHUB_TOKEN: 
     description: 'The issue comment bot GITHUB_TOKEN.'
