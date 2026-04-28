@@ -1,6 +1,6 @@
 # Issues Translate Action  
 
-将非英文issue实时翻译成英文issue的action。     
+将非英文 issue、PR Conversation 评论以及 PR Files changed 里的代码评论实时翻译成英文的 action。     
 
 
 ## 快速使用    
@@ -17,6 +17,8 @@ on:
     types: [created]
   issues: 
     types: [opened]
+  pull_request_review_comment:
+    types: [created]
 
 jobs:
   build:
@@ -30,6 +32,8 @@ jobs:
           CUSTOM_BOT_NOTE: Bot detected the issue body's language is not English, translate it automatically. 👯👭🏻🧑‍🤝‍🧑👫🧑🏿‍🤝‍🧑🏻👩🏾‍🤝‍👨🏿👬🏿
           # 非必须，自定义机器人翻译的前缀开始内容。  
 ````
+
+当触发事件是 `pull_request_review_comment` 时，action 会直接在对应的 Files changed review thread 里回复翻译内容。
 
 
 ## 高级自定义       
@@ -52,6 +56,8 @@ on:
     types: [created]
   issues: 
     types: [opened]
+  pull_request_review_comment:
+    types: [created]
 
 jobs:
   build:
@@ -91,7 +97,6 @@ Project -> Settings -> Manage access -> Invite a collaborator
 11. [gorse](https://github.com/gorse-io/gorse) - An open source recommender system service written in Go
 
 **Have Fun!**  
-
 
 
 

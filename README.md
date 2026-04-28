@@ -1,6 +1,6 @@
 # Issues Translate Action  
 
-The action for translating Non-English issues content to English.   
+The action for translating non-English issues, PR conversation comments, and PR review comments to English.   
 
 [中文文档](README_CN.md)   
 
@@ -19,6 +19,8 @@ on:
     types: [created]
   issues: 
     types: [opened]
+  pull_request_review_comment:
+    types: [created]
 
 jobs:
   build:
@@ -31,7 +33,9 @@ jobs:
           # if true, the robot account @Issues-translate-bot must have modification permissions, invite @Issues-translate-bot to your project or use your custom bot.
           CUSTOM_BOT_NOTE: Bot detected the issue body's language is not English, translate it automatically. 👯👭🏻🧑‍🤝‍🧑👫🧑🏿‍🤝‍🧑🏻👩🏾‍🤝‍👨🏿👬🏿
           # not require. Customize the translation robot prefix message.
-````
+```` 
+
+When the trigger comes from `pull_request_review_comment`, the action replies in the same Files changed review thread with the translated content.
 
 
 ## Advanced Custom   
@@ -54,6 +58,8 @@ on:
     types: [created]
   issues: 
     types: [opened]
+  pull_request_review_comment:
+    types: [created]
 
 jobs:
   build:
