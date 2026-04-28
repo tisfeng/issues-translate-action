@@ -382,7 +382,7 @@ async function createComment(
     return
   }
 
-  await octokit.issues.createComment({
+  await octokit.rest.issues.createComment({
     owner,
     repo,
     issue_number: commentTarget.issueNumber,
@@ -402,7 +402,7 @@ async function modifyTitle(
 ): Promise<void> {
   const {owner, repo} = github.context.repo
   const issueUrl = github.context.payload.issue?.html_url ?? ''
-  await octokit.issues.update({
+  await octokit.rest.issues.update({
     owner,
     repo,
     issue_number: issueNumber,
