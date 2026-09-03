@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import translate from '@tomsun28/google-translate-api'
+import translate from 'google-translate-api-x'
 import franc from 'franc-min'
 
 const ISSUE_COMMENT_EVENT = 'issue_comment'
@@ -320,7 +320,7 @@ async function run(): Promise<void> {
 
     core.setOutput('complete time', new Date().toTimeString())
   } catch (error: unknown) {
-    core.setFailed(error instanceof Error ? error.message : String(error))
+    core.setFailed(formatTranslationError(error))
   }
 }
 
@@ -341,19 +341,32 @@ export function isEnglishText(body: string | null): boolean {
   return detectResult === 'eng'
 }
 
-async function translateIssueOrigin(body: string): Promise<string> {
-  let result = ''
-  try {
-    const response = await translate(body, {to: 'en'})
-    if (response.text !== body) {
-      result = response.text
-    }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    core.error(errorMessage)
-    core.setFailed(errorMessage)
-  }
-  return result
+export function formatTranslationError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error)
+  const errorName = error instanceof Error ? error.name : undefined
+  const cause =
+    error instanceof Error
+      ? (error as Error & {cause?: unknown}).cause
+      : undefined
+  const response =
+    typeof cause === 'object' && cause !== null
+      ? (cause as {response?: {status?: unknown}}).response
+      : undefined
+  const status = response?.status
+  const statusMessage = typeof status === 'number' ? `status=${status}` : ''
+  const nameMessage = errorName && errorName !== 'Error' ? `${errorName}: ` : ''
+
+  return [statusMessage, `${nameMessage}${message}`].filter(Boolean).join(': ')
+}
+
+export async function translateIssueOrigin(body: string): Promise<string> {
+  const response = await translate(body, {
+    to: 'en',
+    forceBatch: true,
+    rejectOnPartialFail: true
+  })
+
+  return response.text === body ? '' : response.text
 }
 
 async function createComment(
