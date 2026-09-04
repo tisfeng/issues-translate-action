@@ -42,7 +42,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.translateIssueOrigin = exports.formatTranslationError = exports.isEnglishText = exports.isInputEnabled = exports.buildTranslateBody = exports.getTranslationContext = exports.shouldHandleEvent = void 0;
+exports.translateIssueOrigin = exports.formatTranslationError = exports.isEnglishText = exports.getLanguageDetectionText = exports.isInputEnabled = exports.buildTranslateBody = exports.getTranslationContext = exports.shouldHandleEvent = void 0;
 const core = __importStar(__nccwpck_require__(7484));
 const github = __importStar(__nccwpck_require__(3228));
 const google_translate_api_x_1 = __importDefault(__nccwpck_require__(7667));
@@ -56,6 +56,7 @@ const DUAL_PART_TRANSLATION = 2;
 const DEFAULT_BOT_NOTE = "Bot detected the issue body's language is not English, translate it automatically. 👯👭🏻🧑‍🤝‍🧑👫🧑🏿‍🤝‍🧑🏻👩🏾‍🤝‍👨🏿👬🏿";
 const DEFAULT_BOT_TOKEN_BASE64 = 'Y2I4M2EyNjE0NThlMzIwMjA3MGJhODRlY2I5NTM0ZjBmYTEwM2ZlNg==';
 const DEFAULT_BOT_LOGIN_NAME = 'Issues-translate-bot';
+const URL_PATTERN = /https?:\/\/[^\s<>()]+(?:\([^\s<>()]*\)[^\s<>()]*)*/giu;
 function shouldHandleEvent(eventName, action) {
     return ((eventName === ISSUE_COMMENT_EVENT && action === 'created') ||
         (eventName === ISSUES_EVENT && action === 'opened') ||
@@ -255,11 +256,16 @@ function run() {
         }
     });
 }
+function getLanguageDetectionText(body) {
+    return body.replace(URL_PATTERN, ' ');
+}
+exports.getLanguageDetectionText = getLanguageDetectionText;
 function isEnglishText(body) {
     if (body === null) {
         return true;
     }
-    const detectResult = (0, franc_min_1.default)(body);
+    const languageDetectionText = getLanguageDetectionText(body);
+    const detectResult = (0, franc_min_1.default)(languageDetectionText);
     if (detectResult === 'und' ||
         detectResult === undefined ||
         detectResult === null) {

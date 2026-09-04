@@ -14,6 +14,7 @@ const DEFAULT_BOT_NOTE =
 const DEFAULT_BOT_TOKEN_BASE64 =
   'Y2I4M2EyNjE0NThlMzIwMjA3MGJhODRlY2I5NTM0ZjBmYTEwM2ZlNg=='
 const DEFAULT_BOT_LOGIN_NAME = 'Issues-translate-bot'
+const URL_PATTERN = /https?:\/\/[^\s<>()]+(?:\([^\s<>()]*\)[^\s<>()]*)*/giu
 
 type Octokit = ReturnType<typeof github.getOctokit>
 
@@ -324,11 +325,16 @@ async function run(): Promise<void> {
   }
 }
 
+export function getLanguageDetectionText(body: string): string {
+  return body.replace(URL_PATTERN, ' ')
+}
+
 export function isEnglishText(body: string | null): boolean {
   if (body === null) {
     return true
   }
-  const detectResult = franc(body)
+  const languageDetectionText = getLanguageDetectionText(body)
+  const detectResult = franc(languageDetectionText)
   if (
     detectResult === 'und' ||
     detectResult === undefined ||

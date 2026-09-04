@@ -28,6 +28,7 @@ import franc from 'franc-min'
 import {
   buildTranslateBody,
   formatTranslationError,
+  getLanguageDetectionText,
   getTranslationContext,
   isInputEnabled,
   isEnglishText,
@@ -239,6 +240,33 @@ describe('issues translate action helpers', () => {
     mockedFranc.mockReturnValue('cmn')
 
     expect(isEnglishText('请帮忙看一下这里')).toBe(false)
+  })
+
+  test('removes URLs before detecting the language of markdown content', () => {
+    const body =
+      '![中文截图](https://github.com/owner/repo/assets/12345678/abcdef)\n这是一条中文评论。'
+
+    expect(getLanguageDetectionText(body)).toBe(
+      '![中文截图]( )\n这是一条中文评论。'
+    )
+
+    mockedFranc.mockReturnValue('cmn')
+    expect(isEnglishText(body)).toBe(false)
+    expect(mockedFranc).toHaveBeenCalledWith(
+      '![中文截图]( )\n这是一条中文评论。'
+    )
+  })
+
+  test('keeps visible English markdown text when removing its URL', () => {
+    const body =
+      '![screenshot](https://github.com/owner/repo/assets/12345678/abcdef)\nPlease review this change.'
+
+    expect(getLanguageDetectionText(body)).toBe(
+      '![screenshot]( )\nPlease review this change.'
+    )
+
+    mockedFranc.mockReturnValue('eng')
+    expect(isEnglishText(body)).toBe(true)
   })
 
   test('treats null text as already handled', () => {
