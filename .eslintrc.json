@@ -50,5 +50,13 @@
       "node": true,
       "es6": true,
       "jest/globals": true
-    }
+    },
+    "overrides": [
+      {
+        "files": ["src/**/*.ts"],
+        "rules": {
+          "i18n-text/no-en": "off"
+        }
+      }
+    ]
   }

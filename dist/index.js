@@ -54,7 +54,6 @@ const REVIEW_COMMENT_EVENT = 'pull_request_review_comment';
 const COMMENT_TITLE_SEPARATOR = '@@====';
 const DUAL_PART_TRANSLATION = 2;
 const DEFAULT_PRIMARY_LANGUAGE = 'en';
-// eslint-disable-next-line i18n-text/no-en
 const DEFAULT_BOT_NOTE = 'Bot automatically translated this content.';
 const DEFAULT_BOT_TOKEN_BASE64 = 'Y2I4M2EyNjE0NThlMzIwMjA3MGJhODRlY2I5NTM0ZjBmYTEwM2ZlNg==';
 const DEFAULT_BOT_LOGIN_NAME = 'Issues-translate-bot';
@@ -208,16 +207,12 @@ function run() {
                 const translateOrigin = `${originComment}${COMMENT_TITLE_SEPARATOR}${originTitle}`;
                 const translateTmp = yield translateIssueOrigin(translateOrigin, commentTargetLanguage);
                 if (translateTmp === '') {
-                    core.warning(
-                    // eslint-disable-next-line i18n-text/no-en
-                    'The translated content is empty or unchanged, ignore return.');
+                    core.warning('The translated content is empty or unchanged, ignore return.');
                     return;
                 }
                 const translateBody = translateTmp.split(COMMENT_TITLE_SEPARATOR);
                 if (translateBody.length !== DUAL_PART_TRANSLATION) {
-                    core.setFailed(
-                    // eslint-disable-next-line i18n-text/no-en
-                    `Translation failed: unexpected number of parts in translated body. Expected 2 parts, got ${translateBody.length}.`);
+                    core.setFailed(`Translation failed: unexpected number of parts in translated body. Expected 2 parts, got ${translateBody.length}.`);
                     return;
                 }
                 translateComment = translateBody[0].trim();
@@ -240,16 +235,12 @@ function run() {
                 translateTitle = null;
             }
             if (!needCommitTitle && !needCommitComment) {
-                core.warning(
-                // eslint-disable-next-line i18n-text/no-en
-                'The translated content is empty or unchanged, ignore return.');
+                core.warning('The translated content is empty or unchanged, ignore return.');
                 return;
             }
             if ((needCommitComment && translateComment === null) ||
                 (needCommitTitle && translateTitle === null)) {
-                core.setFailed(
-                // eslint-disable-next-line i18n-text/no-en
-                'Translation failed: a translated part is missing after target language selection.');
+                core.setFailed('Translation failed: a translated part is missing after target language selection.');
                 return;
             }
             if (octokit === null) {
@@ -298,9 +289,7 @@ function getTranslationTarget(body, languageConfig) {
     }
     if (languageConfig.primary.detectionCodes.includes(detectedLanguage)) {
         if (languageConfig.secondary === null) {
-            core.info(
-            // eslint-disable-next-line i18n-text/no-en
-            `Detect the content is already in ${languageConfig.primary.translateCode}, ignore.`);
+            core.info(`Detect the content is already in ${languageConfig.primary.translateCode}, ignore.`);
             return null;
         }
         return languageConfig.secondary.translateCode;

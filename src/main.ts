@@ -10,7 +10,6 @@ const REVIEW_COMMENT_EVENT = 'pull_request_review_comment'
 const COMMENT_TITLE_SEPARATOR = '@@===='
 const DUAL_PART_TRANSLATION = 2
 const DEFAULT_PRIMARY_LANGUAGE = 'en'
-// eslint-disable-next-line i18n-text/no-en
 const DEFAULT_BOT_NOTE = 'Bot automatically translated this content.'
 const DEFAULT_BOT_TOKEN_BASE64 =
   'Y2I4M2EyNjE0NThlMzIwMjA3MGJhODRlY2I5NTM0ZjBmYTEwM2ZlNg=='
@@ -287,7 +286,6 @@ export async function run(): Promise<void> {
       )
       if (translateTmp === '') {
         core.warning(
-          // eslint-disable-next-line i18n-text/no-en
           'The translated content is empty or unchanged, ignore return.'
         )
         return
@@ -296,7 +294,6 @@ export async function run(): Promise<void> {
 
       if (translateBody.length !== DUAL_PART_TRANSLATION) {
         core.setFailed(
-          // eslint-disable-next-line i18n-text/no-en
           `Translation failed: unexpected number of parts in translated body. Expected 2 parts, got ${translateBody.length}.`
         )
         return
@@ -329,7 +326,6 @@ export async function run(): Promise<void> {
     }
     if (!needCommitTitle && !needCommitComment) {
       core.warning(
-        // eslint-disable-next-line i18n-text/no-en
         'The translated content is empty or unchanged, ignore return.'
       )
       return
@@ -340,7 +336,6 @@ export async function run(): Promise<void> {
       (needCommitTitle && translateTitle === null)
     ) {
       core.setFailed(
-        // eslint-disable-next-line i18n-text/no-en
         'Translation failed: a translated part is missing after target language selection.'
       )
       return
@@ -420,7 +415,6 @@ export function getTranslationTarget(
   if (languageConfig.primary.detectionCodes.includes(detectedLanguage)) {
     if (languageConfig.secondary === null) {
       core.info(
-        // eslint-disable-next-line i18n-text/no-en
         `Detect the content is already in ${languageConfig.primary.translateCode}, ignore.`
       )
       return null
