@@ -20,18 +20,40 @@ jest.mock(
   {virtual: true}
 )
 
-jest.mock('google-translate-api-x', () => jest.fn(), {virtual: true})
+jest.mock(
+  'google-translate-api-x',
+  () => {
+    const translate = jest.fn() as jest.Mock & {getCode: jest.Mock}
+    translate.getCode = jest.fn((input: string) => {
+      const languageCodes: Record<string, string> = {
+        en: 'en',
+        'zh-CN': 'zh-CN',
+        'zh-TW': 'zh-TW',
+        ja: 'ja',
+        ceb: 'ceb',
+        auto: 'auto'
+      }
+      return languageCodes[input] ?? null
+    })
+    return translate
+  },
+  {virtual: true}
+)
 jest.mock('franc-min', () => jest.fn(() => 'cmn'), {virtual: true})
 
+import * as core from '@actions/core'
 import * as github from '@actions/github'
 import franc from 'franc-min'
 import {
   buildTranslateBody,
   formatTranslationError,
+  getLanguageConfig,
   getLanguageDetectionText,
+  getTranslationTarget,
   getTranslationContext,
   isInputEnabled,
   isEnglishText,
+  run,
   shouldHandleEvent,
   translateIssueOrigin
 } from '../src/main'
@@ -40,12 +62,35 @@ describe('issues translate action helpers', () => {
   const mockedFranc = franc as jest.MockedFunction<typeof franc>
   const mockedTranslate = jest.requireMock(
     'google-translate-api-x'
-  ) as jest.Mock
+  ) as jest.Mock & {getCode: jest.Mock}
+  const mockedGetCode = mockedTranslate.getCode
+  const mockedCore = core as jest.Mocked<typeof core>
+  const mockedGithub = github as jest.Mocked<typeof github>
 
   beforeEach(() => {
     mockedFranc.mockReset()
     mockedFranc.mockReturnValue('cmn')
     mockedTranslate.mockReset()
+    mockedGetCode.mockReset()
+    mockedGetCode.mockImplementation((input: string) => {
+      const languageCodes: Record<string, string> = {
+        en: 'en',
+        'zh-CN': 'zh-CN',
+        'zh-TW': 'zh-TW',
+        ja: 'ja',
+        ceb: 'ceb',
+        auto: 'auto'
+      }
+      return languageCodes[input] ?? null
+    })
+    mockedCore.getInput.mockReset()
+    mockedCore.getInput.mockReturnValue('')
+    mockedCore.info.mockReset()
+    mockedCore.warning.mockReset()
+    mockedCore.setFailed.mockReset()
+    mockedCore.setOutput.mockReset()
+    mockedGithub.getOctokit.mockReset()
+    Object.assign(mockedGithub.context, {eventName: '', payload: {}, repo: {}})
   })
 
   test('handles created pull request review comments', () => {
@@ -273,6 +318,66 @@ describe('issues translate action helpers', () => {
     expect(isEnglishText(null)).toBe(true)
   })
 
+  test('uses English as the default primary language and disables secondary translation by default', () => {
+    expect(getLanguageConfig('', '   ')).toEqual({
+      primary: {translateCode: 'en', detectionCodes: ['eng']},
+      secondary: null
+    })
+  })
+
+  test('routes English to the configured secondary language and other languages to the primary language', () => {
+    const languageConfig = getLanguageConfig('en', 'zh-CN')
+
+    mockedFranc.mockReturnValue('eng')
+    expect(
+      getTranslationTarget('Please review this change.', languageConfig)
+    ).toBe('zh-CN')
+
+    mockedFranc.mockReturnValue('cmn')
+    expect(getTranslationTarget('请检查这个改动。', languageConfig)).toBe('en')
+  })
+
+  test('recognizes Chinese primary-language variants and translates English to the secondary language', () => {
+    const languageConfig = getLanguageConfig('zh-CN', 'en')
+
+    mockedFranc.mockReturnValue('cmn')
+    expect(getTranslationTarget('这是一条中文评论。', languageConfig)).toBe(
+      'en'
+    )
+
+    mockedFranc.mockReturnValue('eng')
+    expect(
+      getTranslationTarget('Please review this change.', languageConfig)
+    ).toBe('zh-CN')
+  })
+
+  test('accepts Google language codes without a standard ISO mapping', () => {
+    const languageConfig = getLanguageConfig('ceb', '')
+
+    mockedFranc.mockReturnValue('ceb')
+    expect(getTranslationTarget('Cebuano content.', languageConfig)).toBeNull()
+  })
+
+  test('falls back to the primary language when detection is undetermined', () => {
+    mockedFranc.mockReturnValue('und')
+
+    expect(
+      getTranslationTarget('short', getLanguageConfig('en', 'zh-CN'))
+    ).toBe('en')
+  })
+
+  test('rejects invalid, automatic, and identical configured target languages', () => {
+    expect(() => getLanguageConfig('invalid', '')).toThrow(
+      'PRIMARY_LANGUAGE is not a supported Google Translate language.'
+    )
+    expect(() => getLanguageConfig('auto', '')).toThrow(
+      'PRIMARY_LANGUAGE cannot be auto.'
+    )
+    expect(() => getLanguageConfig('en', 'en')).toThrow(
+      'SECONDARY_LANGUAGE must be different from PRIMARY_LANGUAGE when it is configured.'
+    )
+  })
+
   test('translates with the batch endpoint options and returns response text', async () => {
     mockedTranslate.mockResolvedValue({text: 'Please review this change.'})
 
@@ -281,6 +386,19 @@ describe('issues translate action helpers', () => {
     )
     expect(mockedTranslate).toHaveBeenCalledWith('请检查这个改动。', {
       to: 'en',
+      forceBatch: true,
+      rejectOnPartialFail: true
+    })
+  })
+
+  test('translates to an explicitly selected target language', async () => {
+    mockedTranslate.mockResolvedValue({text: '请检查这个改动。'})
+
+    await expect(
+      translateIssueOrigin('Please review this change.', 'zh-CN')
+    ).resolves.toBe('请检查这个改动。')
+    expect(mockedTranslate).toHaveBeenCalledWith('Please review this change.', {
+      to: 'zh-CN',
       forceBatch: true,
       rejectOnPartialFail: true
     })
@@ -305,5 +423,142 @@ describe('issues translate action helpers', () => {
     })
 
     expect(formatTranslationError(error)).toBe('status=429: Too Many Requests')
+  })
+
+  test('translates a mixed-language issue title and body separately', async () => {
+    const createComment = jest.fn()
+    const update = jest.fn()
+    const octokit = {
+      rest: {issues: {createComment, update}}
+    }
+    mockedCore.getInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        BOT_GITHUB_TOKEN: 'token',
+        BOT_LOGIN_NAME: 'translator-bot',
+        PRIMARY_LANGUAGE: 'en',
+        SECONDARY_LANGUAGE: 'zh-CN',
+        CUSTOM_BOT_NOTE: 'Custom translation note.'
+      }
+      return inputs[name] ?? ''
+    })
+    Object.assign(mockedGithub.context, {
+      eventName: 'issues',
+      repo: {owner: 'owner', repo: 'repo'},
+      payload: {
+        action: 'opened',
+        issue: {
+          number: 9,
+          title: 'Fix build failure',
+          body: '请检查这个改动。',
+          user: {login: 'contributor'}
+        }
+      }
+    })
+    mockedGithub.getOctokit.mockReturnValue(
+      (octokit as unknown) as ReturnType<typeof github.getOctokit>
+    )
+    mockedFranc.mockReturnValueOnce('cmn').mockReturnValueOnce('eng')
+    mockedTranslate
+      .mockResolvedValueOnce({text: 'Please check this change.'})
+      .mockResolvedValueOnce({text: '修复构建失败'})
+
+    await run()
+
+    expect(mockedTranslate).toHaveBeenNthCalledWith(1, '请检查这个改动。', {
+      to: 'en',
+      forceBatch: true,
+      rejectOnPartialFail: true
+    })
+    expect(mockedTranslate).toHaveBeenNthCalledWith(2, 'Fix build failure', {
+      to: 'zh-CN',
+      forceBatch: true,
+      rejectOnPartialFail: true
+    })
+    expect(createComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        owner: 'owner',
+        repo: 'repo',
+        issue_number: 9,
+        body: expect.stringContaining('Custom translation note.')
+      })
+    )
+    expect(createComment.mock.calls[0][0].body).toContain(
+      '**Title:** 修复构建失败'
+    )
+    expect(update).not.toHaveBeenCalled()
+  })
+
+  test('keeps one combined translation request when title and body share a target', async () => {
+    const createComment = jest.fn()
+    const octokit = {rest: {issues: {createComment}}}
+    mockedCore.getInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        BOT_GITHUB_TOKEN: 'token',
+        BOT_LOGIN_NAME: 'translator-bot',
+        PRIMARY_LANGUAGE: 'en'
+      }
+      return inputs[name] ?? ''
+    })
+    Object.assign(mockedGithub.context, {
+      eventName: 'issues',
+      repo: {owner: 'owner', repo: 'repo'},
+      payload: {
+        action: 'opened',
+        issue: {
+          number: 9,
+          title: '修复构建问题',
+          body: '请检查这个改动。',
+          user: {login: 'contributor'}
+        }
+      }
+    })
+    mockedGithub.getOctokit.mockReturnValue(
+      (octokit as unknown) as ReturnType<typeof github.getOctokit>
+    )
+    mockedFranc.mockReturnValue('cmn')
+    mockedTranslate.mockResolvedValue({
+      text: 'Please check this change.@@====Fix build failure'
+    })
+
+    await run()
+
+    expect(mockedTranslate).toHaveBeenCalledTimes(1)
+    expect(mockedTranslate).toHaveBeenCalledWith(
+      '请检查这个改动。@@====修复构建问题',
+      {
+        to: 'en',
+        forceBatch: true,
+        rejectOnPartialFail: true
+      }
+    )
+    expect(createComment).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not translate an English comment created by the configured bot', async () => {
+    mockedCore.getInput.mockImplementation((name: string) => {
+      if (name === 'SECONDARY_LANGUAGE') {
+        return 'zh-CN'
+      }
+      return ''
+    })
+    Object.assign(mockedGithub.context, {
+      eventName: 'pull_request_review_comment',
+      repo: {owner: 'owner', repo: 'repo'},
+      payload: {
+        action: 'created',
+        pull_request: {number: 7},
+        comment: {
+          id: 99,
+          body: 'Please review this change.',
+          user: {login: 'Issues-translate-bot'}
+        }
+      }
+    })
+    mockedFranc.mockReturnValue('eng')
+
+    await run()
+
+    expect(mockedTranslate).not.toHaveBeenCalled()
+    expect(mockedCore.setFailed).not.toHaveBeenCalled()
   })
 })

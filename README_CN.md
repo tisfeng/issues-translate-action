@@ -1,6 +1,6 @@
 # Issues Translate Action  
 
-将非英文 issue、PR Conversation 评论以及 PR Files changed 里的代码评论实时翻译成英文的 action。     
+按配置语言实时翻译 issue、PR Conversation 评论以及 PR Files changed 代码评论的 action。
 
 
 ## 快速使用    
@@ -27,13 +27,39 @@ jobs:
       - uses: usthe/issues-translate-action@v2.7
         with:
           IS_MODIFY_TITLE: false
-          # 非必须，决定是否需要修改issue标题内容   
-          # 若是true，则机器人账户@Issues-translate-bot必须拥有修改此仓库issue权限。可以通过邀请@Issues-translate-bot加入仓库协作者实现。
-          CUSTOM_BOT_NOTE: Bot detected the issue body's language is not English, translate it automatically. 👯👭🏻🧑‍🤝‍🧑👫🧑🏿‍🤝‍🧑🏻👩🏾‍🤝‍👨🏿👬🏿
-          # 非必须，自定义机器人翻译的前缀开始内容。  
+          # 非必须，默认 false。设为 true 时直接修改翻译后的 issue 标题。
+          # 机器人账户必须拥有修改 issue 的权限。
+          PRIMARY_LANGUAGE: en
+          # 非必须，默认 en。非该语言的内容会翻译为此语言。
+          SECONDARY_LANGUAGE: ''
+          # 非必须，默认空。配置后，第一语言内容会翻译为该语言。
+          CUSTOM_BOT_NOTE: Bot automatically translated this content.
+          # 非必须，自定义机器人翻译评论的前缀。
 ````
 
 当触发事件是 `pull_request_review_comment` 时，action 会直接在对应的 Files changed review thread 里回复翻译内容。
+
+### 语言路由
+
+`PRIMARY_LANGUAGE` 和 `SECONDARY_LANGUAGE` 使用 Google Translate 语言代码，
+例如 `en`、`zh-CN`、`ja`。
+
+- 不是 `PRIMARY_LANGUAGE` 的内容会翻译为第一语言。
+- 已是 `PRIMARY_LANGUAGE` 的内容，在配置 `SECONDARY_LANGUAGE` 时会翻译为第二语言。
+- 第二语言为空时，第一语言内容会被跳过。
+
+默认的 `PRIMARY_LANGUAGE: en` 与空的 `SECONDARY_LANGUAGE` 保持原有的
+“非英文翻译为英文、英文跳过”行为。若希望英文 review comment 翻译为简体中文，
+同时其他语言仍翻译为英文，请配置：
+
+````yaml
+PRIMARY_LANGUAGE: en
+SECONDARY_LANGUAGE: zh-CN
+CUSTOM_BOT_NOTE: Bot automatically translated this content.
+````
+
+`IS_MODIFY_TITLE` 只决定 `issues(opened)` 事件中翻译后的标题是否直接覆盖原标题；
+它不决定标题或评论是否需要翻译。
 
 
 ## 高级自定义       
@@ -69,6 +95,9 @@ jobs:
           # 非必须，填写您的机器人github账户token
           BOT_LOGIN_NAME: Issues-translate-bot    
           # 非必须，建议不填写，机器人名称会根据token获取到，若填写，请一定与token对应的github账户名相同
+          PRIMARY_LANGUAGE: en
+          SECONDARY_LANGUAGE: ''
+          CUSTOM_BOT_NOTE: Bot automatically translated this content.
 ````
 
 
@@ -97,7 +126,5 @@ Project -> Settings -> Manage access -> Invite a collaborator
 11. [gorse](https://github.com/gorse-io/gorse) - An open source recommender system service written in Go
 
 **Have Fun!**  
-
-
 
 

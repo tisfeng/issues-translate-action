@@ -1,5 +1,5 @@
 name: 'Issues and PRs Translator'
-description: 'The action for translating non-English issues, PR conversation comments, and PR review comments to English.'
+description: 'The action for translating issues, PR conversation comments, and PR review comments between configured languages.'
 branding:
   icon: 'disc'
   color: 'orange'
@@ -13,6 +13,14 @@ inputs:
     description: 'Is need modify issue title, true or false, default false.'
   CUSTOM_BOT_NOTE:
     description: 'Custom bot note message.'
+  PRIMARY_LANGUAGE:
+    description: 'Preferred target language for content not written in this language.'
+    required: false
+    default: 'en'
+  SECONDARY_LANGUAGE:
+    description: 'Optional target language for content already written in PRIMARY_LANGUAGE.'
+    required: false
+    default: ''
 runs:
   using: 'node24'
   main: 'dist/index.js'

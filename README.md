@@ -1,6 +1,6 @@
 # Issues Translate Action  
 
-The action for translating non-English issues, PR conversation comments, and PR review comments to English.   
+The action for translating issues, PR conversation comments, and PR review comments between configured languages.
 
 [中文文档](README_CN.md)   
 
@@ -29,13 +29,43 @@ jobs:
       - uses: usthe/issues-translate-action@v2.7
         with:
           IS_MODIFY_TITLE: false
-          # not require, default false, . Decide whether to modify the issue title
-          # if true, the robot account @Issues-translate-bot must have modification permissions, invite @Issues-translate-bot to your project or use your custom bot.
-          CUSTOM_BOT_NOTE: Bot detected the issue body's language is not English, translate it automatically. 👯👭🏻🧑‍🤝‍🧑👫🧑🏿‍🤝‍🧑🏻👩🏾‍🤝‍👨🏿👬🏿
-          # not require. Customize the translation robot prefix message.
+          # Optional, default false. If true, update a translated issue title directly.
+          # The bot account must have permission to modify issues.
+          PRIMARY_LANGUAGE: en
+          # Optional, default en. Content not written in this language is translated into it.
+          SECONDARY_LANGUAGE: ''
+          # Optional, default empty. Primary-language content is translated into it when configured.
+          CUSTOM_BOT_NOTE: Bot automatically translated this content.
+          # Optional. Customize the translation robot prefix message.
 ```` 
 
 When the trigger comes from `pull_request_review_comment`, the action replies in the same Files changed review thread with the translated content.
+
+### Language routing
+
+`PRIMARY_LANGUAGE` and `SECONDARY_LANGUAGE` use Google Translate language
+codes, such as `en`, `zh-CN`, and `ja`.
+
+- Content not written in `PRIMARY_LANGUAGE` is translated into it.
+- Content already written in `PRIMARY_LANGUAGE` is translated into
+  `SECONDARY_LANGUAGE` when it is configured.
+- Content already written in `PRIMARY_LANGUAGE` is skipped when
+  `SECONDARY_LANGUAGE` is empty.
+
+The default `PRIMARY_LANGUAGE: en` and empty `SECONDARY_LANGUAGE` preserve the
+original non-English-to-English behavior. For English review comments to be
+translated into Simplified Chinese while other languages continue to translate
+into English, set:
+
+````yaml
+PRIMARY_LANGUAGE: en
+SECONDARY_LANGUAGE: zh-CN
+CUSTOM_BOT_NOTE: Bot automatically translated this content.
+````
+
+`IS_MODIFY_TITLE` only controls whether a translated title from an
+`issues(opened)` event replaces the original title. It does not control whether
+the title or comment is translated.
 
 
 ## Advanced Custom   
@@ -72,6 +102,9 @@ jobs:
           BOT_LOGIN_NAME: Issues-translate-bot    
           # Not required, suggest not input, action will get name from BOT_GITHUB_TOKEN
           # If input, BOT name must match github token
+          PRIMARY_LANGUAGE: en
+          SECONDARY_LANGUAGE: ''
+          CUSTOM_BOT_NOTE: Bot automatically translated this content.
 ````
 
 
