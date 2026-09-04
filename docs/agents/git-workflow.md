@@ -1,24 +1,47 @@
-# Git 工作流与本地交付
+# Git 工作流
 
-本文件只规定 Git 状态、暂存和交付边界。写入前检查见
-[`execution-safety.md`](execution-safety.md)。
+本文件只规定仓库 Git 状态保护、暂存和本地交付；请求语义见
+[`request-boundary.md`](request-boundary.md)，写入安全见 [`execution-safety.md`](execution-safety.md)。
 
-## 状态与范围
+## 基本安全
 
-- 每次写入前后检查 `git status --short --branch`；需要理解改动时使用原始 diff。
-- staged、unstaged 与 untracked 文件默认属于用户，除非本任务已记录其 Agent-owned paths。
-- 精确暂存只允许包含已授权、已验证的任务路径；不要用暂存范围掩盖无关改动。
-- `git diff --check` 是每次文件变更的最低检查，不能替代功能验证。
+- 保留用户现有的 staged 和 unstaged 变更，不重写或丢弃无关工作树内容。
+- 除非任务明确授权、处于 `delivery` 模式或满足自动本地提交规则，否则不要暂存、提交或推送；
+  明确禁止优先。
+- 推送前必须将目标分支同步到最新远程状态；除非用户明确要求，任何模式都不执行 push、pull、
+  rebase 或 merge。
+- 每个提交聚焦于一个连贯的行为或文档变更，并使用 Angular-style 信息。
 
-## 授权边界
+## Git 交付顺序
 
-- `git add`、commit、push、pull、fetch、rebase、merge、reset、checkout 覆盖和分支创建都
-  需要用户明确授权或用户明确调用的对应 skill。
-- implementation 默认保留未暂存变更；它不自动授权本地提交。
-- 用户调用提交 skill 时，严格按该 skill 的暂存与提交规则执行；没有该授权时不改变索引。
-- push、pull、rebase 或 merge 从不由本地提交自动推断。
+1. 第一次写入前记录 `initial_head`、初始 staged、unstaged、untracked、冲突和任务允许路径。
+2. `planning` 始终只读；初始索引非空、路径重叠、存在冲突、写入前检查失败或验证失败时进入
+   `protected`。
+3. `delivery` 只处理用户明确授权的 staged diff，使用 `git-commit` skill，不自动扩大暂存范围。
+4. `implementation` 在验证完成后，只有满足自动本地提交条件时才执行一次自动提交。
 
-## 交付报告
+## 自动本地提交条件
 
-报告实际提交、分支、工作树状态、push 状态和已运行验证。不要把未验证、未暂存或无关
-变更描述为已交付。
+以下条件必须同时满足：
+
+- 任务是 `implementation`，且没有明确禁止提交；
+- 初始索引为空，任务执行期间也没有出现新的非 Agent staged 内容；
+- `HEAD` 未变化，当前索引无冲突，用户变更与 Agent 变更可以清晰分离；
+- Agent 产生了仓库文件差异，并已创建或更新同任务 history；
+- 允许路径和 Agent-owned paths 已明确，暂存后 staged paths 与预期集合完全一致；
+- 必要验证已完成且没有阻塞性失败；
+- 当前任务尚未执行过自动提交。
+
+`implementation` 的执行计划必须如实记录交付默认值：只有用户明确禁止提交时才可以将
+`delivery_authorization` 写为 `none`。不能因为用户没有单独提及“提交”，就把自动本地提交
+降级为未提交；计划作者或 Agent 也不能用计划字段添加用户未给出的禁止条件。
+
+自动提交只暂存明确的 Agent-owned paths 和同任务 history，不使用 `git add .`。同一任务分多轮
+实施时复用同一条 history；仅修改 history 的任务不递归创建第二条。没有仓库文件差异时不创建
+空提交。
+
+提交成功后，报告完整提交哈希、实际提交信息、工作树状态、push 状态，以及文本文件的代码、
+文档和总变动统计；二进制变动不计入统计。
+
+如果条件不满足，保留工作树并报告原因，不得提交。history 缺失时先补齐记录；如果 history
+不在允许范围内或无法与用户变更分离，同样不得提交。

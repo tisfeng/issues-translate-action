@@ -21,9 +21,16 @@
 ## 已知后续事项
 
 - 未触发真实翻译、GitHub 事件或评论/标题写入；未修改 Easydict workflow。
-- 未创建 Release、暂存、提交或推送。本地改动需要在发布新版本后才能被 `uses: ...@v2.8.3` 的既有引用使用。
+- 未创建 Release 或 push。本地改动已在用户明确调用 `git-commit` 后提交为
+  `67da8562a48b2aa72016bd6499d06e261291c449`；仍需发布新版本才能被新的 `uses:` 引用使用。
 - `npm install` 为绕过既有 peer dependency 冲突使用了 `--legacy-peer-deps`；安装后 `npm audit` 报告 56 个既有依赖漏洞，本任务未执行 audit 修复。
 
 ## 关联计划
 
 - [两阶段目标语言路由执行计划](../../exec-plans/completed/2026-09-04-two-language-routing.md)
+
+## 后续更正（2026-09-05）
+
+该次显式提交还包含任务开始前已有的 v2.8.3 release 记录。它不改变两语言路由的代码事实，
+但说明先前的暂存范围没有遵循后来恢复的精确 Agent-owned paths 门禁；现行自动交付不再使用
+`git add .`。
