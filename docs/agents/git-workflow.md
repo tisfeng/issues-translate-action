@@ -1,47 +1,51 @@
 # Git 工作流
 
-本文件只规定仓库 Git 状态保护、暂存和本地交付；请求语义见
-[`request-boundary.md`](request-boundary.md)，写入安全见 [`execution-safety.md`](execution-safety.md)。
+本文规定 Git 状态保护、暂存和本地交付。任务授权与保护状态以
+[`request-boundary.md`](request-boundary.md) 为准，plan/history 生命周期以
+[`README.md`](README.md) 为准。
 
 ## 基本安全
 
-- 保留用户现有的 staged 和 unstaged 变更，不重写或丢弃无关工作树内容。
-- 除非任务明确授权、处于 `delivery` 模式或满足自动本地提交规则，否则不要暂存、提交或推送；
-  明确禁止优先。
-- 推送前必须将目标分支同步到最新远程状态；除非用户明确要求，任何模式都不执行 push、pull、
-  rebase 或 merge。
-- 每个提交聚焦于一个连贯的行为或文档变更，并使用 Angular-style 信息。
+- 保留用户已有的 staged、unstaged、untracked 和提交历史，不重写或丢弃无关内容。
+- 未获得对应授权时，不暂存、提交、创建分支、集成或推送；明确禁止优先。
+- implementation 默认只允许满足门禁后的本地自动提交，不自行扩大为 fetch、pull、push、
+  rebase、merge、reset、stash 或 clean。
+- 每个提交聚焦一个连贯变更，并使用 Angular-style 信息。
 
-## Git 交付顺序
+## 交付顺序
 
-1. 第一次写入前记录 `initial_head`、初始 staged、unstaged、untracked、冲突和任务允许路径。
-2. `planning` 始终只读；初始索引非空、路径重叠、存在冲突、写入前检查失败或验证失败时进入
-   `protected`。
-3. `delivery` 只处理用户明确授权的 staged diff，使用 `git-commit` skill，不自动扩大暂存范围。
-4. `implementation` 在验证完成后，只有满足自动本地提交条件时才执行一次自动提交。
+1. implementation 使用首次写入前冻结的 HEAD、索引、工作树、冲突、允许路径和内容归属判断
+   交付安全。
+2. 完成最终审查和验证后冻结 `agent_owned_paths`，并将本任务每个实际改动路径逐一列入
+   `expected_commit_paths`；不得遗漏、混入用户改动或包含允许范围外路径。
+3. 所有其他写入结束后，串行使用 [`.codex/agents/git-delivery.toml`](../../.codex/agents/git-delivery.toml)：
+   `commit` 与 `auto-local-commit` 使用 [git-commit](../../.agents/skills/git-commit/SKILL.md)，
+   只有 `integration` 才使用 [worktree-rebase-merge](../../.agents/skills/worktree-rebase-merge/SKILL.md)。
+4. 需要创建提交时，git-delivery 先以 `prepare` 只读重验现场并返回精确提交信息草稿；主 Agent
+   展示草稿后，同一 agent 才能进入 `apply`。
+5. 完成后主 Agent 独立核验提交哈希、实际提交信息、分支、工作树、统计和未 push 状态。
 
-## 自动本地提交条件
+配置、授权、模型、范围、HEAD、索引、冲突或验证不确定时进入 protected；不得改由其他模型执行
+缩减版交付。
+
+## 自动本地提交
 
 以下条件必须同时满足：
 
-- 任务是 `implementation`，且没有明确禁止提交；
-- 初始索引为空，任务执行期间也没有出现新的非 Agent staged 内容；
-- `HEAD` 未变化，当前索引无冲突，用户变更与 Agent 变更可以清晰分离；
-- Agent 产生了仓库文件差异，并已创建或更新同任务 history；
-- 允许路径和 Agent-owned paths 已明确，暂存后 staged paths 与预期集合完全一致；
-- 必要验证已完成且没有阻塞性失败；
-- 当前任务尚未执行过自动提交。
+- 任务是 implementation，且没有仍有效的禁止提交或暂缓交付要求。
+- 初始索引为空，交付前没有出现新的非 Agent staged 内容。
+- HEAD 未变化，索引无冲突，用户内容与 Agent 变更可以清晰分离。
+- 最终存在仓库差异，并已满足同任务 history 要求。
+- `expected_commit_paths` 逐一列出全部 Agent-owned 改动；暂存后只包含这些路径。
+- 必要审查和验证覆盖最终快照，没有未解决且经核实的阻塞问题或失败验证。
 
-`implementation` 的执行计划必须如实记录交付默认值：只有用户明确禁止提交时才可以将
-`delivery_authorization` 写为 `none`。不能因为用户没有单独提及“提交”，就把自动本地提交
-降级为未提交；计划作者或 Agent 也不能用计划字段添加用户未给出的禁止条件。
+git-delivery 只精确暂存 expected paths，不使用 `git add .`。条件不满足时保留差异并报告原因，
+不得为满足提交条件扩大授权或混入用户内容。
 
-自动提交只暂存明确的 Agent-owned paths 和同任务 history，不使用 `git add .`。同一任务分多轮
-实施时复用同一条 history；仅修改 history 的任务不递归创建第二条。没有仓库文件差异时不创建
-空提交。
+## 显式交付与集成
 
-提交成功后，报告完整提交哈希、实际提交信息、工作树状态、push 状态，以及文本文件的代码、
-文档和总变动统计；二进制变动不计入统计。
-
-如果条件不满足，保留工作树并报告原因，不得提交。history 缺失时先补齐记录；如果 history
-不在允许范围内或无法与用户变更分离，同样不得提交。
+- 显式提交已有 staged 内容时以 staged raw patch 为唯一事实来源，不反向要求补写 history。
+- 只有 integration 授权才允许创建任务分支、临时 worktree、rebase 或 merge。
+- push 必须来自用户明确要求，或来自用户明确调用且 skill 必然包含 push 的 PR/发布工作流；
+  执行前仍须核对远程目标和提交关系。
+- PR review 与 PR 创建分别遵循 `review-pr`、`submit-pr` Skill 的完整流程；它们不互相授权。
