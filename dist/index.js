@@ -1,6 +1,108 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 738:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/**
+ * Builds a noise-reduced language-detection copy and identifies CJK scripts
+ * when Latin technical terms would otherwise dominate the detector input.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getCjkLanguageOverride = exports.getLanguageDetectionText = void 0;
+const URL_PATTERN = /https?:\/\/[^\s<>()]+(?:\([^\s<>()]*\)[^\s<>()]*)*/giu;
+const FENCED_CODE_BLOCK_PATTERN = /```[\s\S]*?```|~~~[\s\S]*?~~~/gu;
+const INLINE_CODE_PATTERN = /`[^`\n]*`/gu;
+const MARKDOWN_LINK_PATTERN = /!?\[([^\]]*)\]\([^\n)]*\)/gu;
+const COMMIT_SHA_PATTERN = /\b[0-9a-f]{7,40}\b/giu;
+const MULTIPLE_WHITESPACE_PATTERN = /\s+/gu;
+const HAN_CHARACTER_PATTERN = /^\p{Script=Han}$/u;
+const HIRAGANA_CHARACTER_PATTERN = /^\p{Script=Hiragana}$/u;
+const KATAKANA_CHARACTER_PATTERN = /^\p{Script=Katakana}$/u;
+const HANGUL_CHARACTER_PATTERN = /^\p{Script=Hangul}$/u;
+const LATIN_CHARACTER_PATTERN = /^\p{Script=Latin}$/u;
+const LETTER_CHARACTER_PATTERN = /^\p{Letter}$/u;
+const MIN_CJK_OVERRIDE_CHARACTERS = 4;
+const MIN_CJK_OVERRIDE_SHARE = 0.2;
+function getLanguageDetectionText(body) {
+    return body
+        .replace(URL_PATTERN, ' ')
+        .replace(FENCED_CODE_BLOCK_PATTERN, ' ')
+        .replace(INLINE_CODE_PATTERN, ' ')
+        .replace(MARKDOWN_LINK_PATTERN, '$1')
+        .replace(COMMIT_SHA_PATTERN, ' ')
+        .replace(MULTIPLE_WHITESPACE_PATTERN, ' ')
+        .trim();
+}
+exports.getLanguageDetectionText = getLanguageDetectionText;
+function getCjkLanguageOverride(text) {
+    const counts = getScriptCounts(text);
+    const kana = counts.hiragana + counts.katakana;
+    const japaneseNativeCharacters = counts.han + kana;
+    const isJapanese = kana >= MIN_CJK_OVERRIDE_CHARACTERS &&
+        hasMinimumScriptShare(japaneseNativeCharacters, counts.totalLetters) &&
+        counts.latin >= japaneseNativeCharacters;
+    const isKorean = counts.hangul >= MIN_CJK_OVERRIDE_CHARACTERS &&
+        hasMinimumScriptShare(counts.hangul, counts.totalLetters) &&
+        counts.latin >= counts.hangul;
+    if (isJapanese && isKorean) {
+        return null;
+    }
+    if (isJapanese) {
+        return 'jpn';
+    }
+    if (isKorean) {
+        return 'kor';
+    }
+    const hasJapaneseOrKoreanCharacters = kana > 0 || counts.hangul > 0;
+    const isChinese = !hasJapaneseOrKoreanCharacters &&
+        counts.han >= MIN_CJK_OVERRIDE_CHARACTERS &&
+        hasMinimumScriptShare(counts.han, counts.totalLetters) &&
+        counts.latin >= counts.han;
+    return isChinese ? 'cmn' : null;
+}
+exports.getCjkLanguageOverride = getCjkLanguageOverride;
+function getScriptCounts(text) {
+    const counts = {
+        totalLetters: 0,
+        latin: 0,
+        han: 0,
+        hiragana: 0,
+        katakana: 0,
+        hangul: 0
+    };
+    for (const character of text) {
+        if (LETTER_CHARACTER_PATTERN.test(character)) {
+            counts.totalLetters += 1;
+        }
+        if (LATIN_CHARACTER_PATTERN.test(character)) {
+            counts.latin += 1;
+        }
+        if (HAN_CHARACTER_PATTERN.test(character)) {
+            counts.han += 1;
+        }
+        if (HIRAGANA_CHARACTER_PATTERN.test(character)) {
+            counts.hiragana += 1;
+        }
+        if (KATAKANA_CHARACTER_PATTERN.test(character)) {
+            counts.katakana += 1;
+        }
+        if (HANGUL_CHARACTER_PATTERN.test(character)) {
+            counts.hangul += 1;
+        }
+    }
+    return counts;
+}
+function hasMinimumScriptShare(scriptCharacters, totalLetters) {
+    return (totalLetters > 0 &&
+        scriptCharacters / totalLetters >= MIN_CJK_OVERRIDE_SHARE);
+}
+
+
+/***/ }),
+
 /***/ 5915:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -42,12 +144,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.translateIssueOrigin = exports.formatTranslationError = exports.getDetectedLanguage = exports.isEnglishText = exports.getTranslationTarget = exports.getLanguageConfig = exports.getLanguageDetectionText = exports.run = exports.isInputEnabled = exports.neutralizeCodexMentions = exports.buildTranslateBody = exports.getTranslationContext = exports.shouldHandleEvent = void 0;
+exports.translateIssueOrigin = exports.formatTranslationError = exports.getDetectedLanguage = exports.isEnglishText = exports.getTranslationTarget = exports.getLanguageConfig = exports.run = exports.isInputEnabled = exports.neutralizeCodexMentions = exports.buildTranslateBody = exports.getTranslationContext = exports.shouldHandleEvent = exports.getLanguageDetectionText = void 0;
 const core = __importStar(__nccwpck_require__(7484));
 const github = __importStar(__nccwpck_require__(3228));
 const google_translate_api_x_1 = __importStar(__nccwpck_require__(7667));
 const franc_min_1 = __importDefault(__nccwpck_require__(2385));
 const langs_1 = __importDefault(__nccwpck_require__(681));
+const language_detection_1 = __nccwpck_require__(738);
+var language_detection_2 = __nccwpck_require__(738);
+Object.defineProperty(exports, "getLanguageDetectionText", ({ enumerable: true, get: function () { return language_detection_2.getLanguageDetectionText; } }));
 const ISSUE_COMMENT_EVENT = 'issue_comment';
 const ISSUES_EVENT = 'issues';
 const REVIEW_COMMENT_EVENT = 'pull_request_review_comment';
@@ -57,9 +162,11 @@ const DEFAULT_PRIMARY_LANGUAGE = 'en';
 const DEFAULT_BOT_NOTE = 'Bot automatically translated this content.';
 const DEFAULT_BOT_TOKEN_BASE64 = 'Y2I4M2EyNjE0NThlMzIwMjA3MGJhODRlY2I5NTM0ZjBmYTEwM2ZlNg==';
 const DEFAULT_BOT_LOGIN_NAME = 'Issues-translate-bot';
-const URL_PATTERN = /https?:\/\/[^\s<>()]+(?:\([^\s<>()]*\)[^\s<>()]*)*/giu;
 const CODEX_MENTION_PATTERN = /(^|[^A-Za-z0-9_-])@(codex)(?![A-Za-z0-9_-])/giu;
+const LINE_ENDING_PATTERN = /\r\n?/gu;
 const LANGUAGE_DETECTION_ALIASES = {
+    ja: ['jpn'],
+    ko: ['kor'],
     zh: ['cmn', 'zho'],
     'zh-cn': ['cmn', 'zho'],
     'zh-tw': ['cmn', 'zho']
@@ -220,8 +327,12 @@ function run() {
                     core.setFailed(`Translation failed: unexpected number of parts in translated body. Expected 2 parts, got ${translateBody.length}.`);
                     return;
                 }
-                translateComment = translateBody[0].trim();
-                translateTitle = translateBody[1].trim();
+                translateComment = hasMeaningfulTranslation(originComment !== null && originComment !== void 0 ? originComment : '', translateBody[0])
+                    ? translateBody[0].trim()
+                    : '';
+                translateTitle = hasMeaningfulTranslation(originTitle !== null && originTitle !== void 0 ? originTitle : '', translateBody[1])
+                    ? translateBody[1].trim()
+                    : '';
             }
             else {
                 if (needCommitComment && commentTargetLanguage !== null) {
@@ -269,10 +380,6 @@ function run() {
     });
 }
 exports.run = run;
-function getLanguageDetectionText(body) {
-    return body.replace(URL_PATTERN, ' ');
-}
-exports.getLanguageDetectionText = getLanguageDetectionText;
 function getLanguageConfig(primaryInput, secondaryInput) {
     const primary = normalizeLanguage(primaryInput.trim() || DEFAULT_PRIMARY_LANGUAGE, 'PRIMARY_LANGUAGE');
     const secondaryValue = secondaryInput.trim();
@@ -313,7 +420,12 @@ function isEnglishText(body) {
 }
 exports.isEnglishText = isEnglishText;
 function getDetectedLanguage(body) {
-    const languageDetectionText = getLanguageDetectionText(body);
+    const languageDetectionText = (0, language_detection_1.getLanguageDetectionText)(body);
+    const cjkLanguageOverride = (0, language_detection_1.getCjkLanguageOverride)(languageDetectionText);
+    if (cjkLanguageOverride !== null) {
+        core.info(`Detect comment body language from Unicode script result is: ${cjkLanguageOverride}`);
+        return cjkLanguageOverride;
+    }
     const detectResult = (0, franc_min_1.default)(languageDetectionText);
     if (detectResult === 'und' ||
         detectResult === undefined ||
@@ -347,10 +459,17 @@ function translateIssueOrigin(body, targetLanguage = DEFAULT_PRIMARY_LANGUAGE) {
             forceBatch: true,
             rejectOnPartialFail: true
         });
-        return response.text === body ? '' : response.text;
+        return hasMeaningfulTranslation(body, response.text) ? response.text : '';
     });
 }
 exports.translateIssueOrigin = translateIssueOrigin;
+function hasMeaningfulTranslation(original, translated) {
+    return (normalizeForTranslationComparison(original) !==
+        normalizeForTranslationComparison(translated));
+}
+function normalizeForTranslationComparison(text) {
+    return text.normalize('NFC').replace(LINE_ENDING_PATTERN, '\n');
+}
 function normalizeLanguage(input, inputName) {
     var _a, _b, _c, _d;
     if (input.toLowerCase() === 'auto') {

@@ -30,6 +30,7 @@ jest.mock(
         'zh-CN': 'zh-CN',
         'zh-TW': 'zh-TW',
         ja: 'ja',
+        ko: 'ko',
         ceb: 'ceb',
         auto: 'auto'
       }
@@ -79,6 +80,7 @@ describe('issues translate action helpers', () => {
         'zh-CN': 'zh-CN',
         'zh-TW': 'zh-TW',
         ja: 'ja',
+        ko: 'ko',
         ceb: 'ceb',
         auto: 'auto'
       }
@@ -311,31 +313,58 @@ describe('issues translate action helpers', () => {
     expect(isEnglishText('请帮忙看一下这里')).toBe(false)
   })
 
-  test('removes URLs before detecting the language of markdown content', () => {
+  test('removes URLs before detecting the language of Chinese markdown content', () => {
     const body =
       '![中文截图](https://github.com/owner/repo/assets/12345678/abcdef)\n这是一条中文评论。'
+    const detectionText = getLanguageDetectionText(body)
 
-    expect(getLanguageDetectionText(body)).toBe(
-      '![中文截图]( )\n这是一条中文评论。'
-    )
+    expect(detectionText).toContain('中文截图')
+    expect(detectionText).toContain('这是一条中文评论。')
+    expect(detectionText).not.toContain('https://')
 
     mockedFranc.mockReturnValue('cmn')
     expect(isEnglishText(body)).toBe(false)
-    expect(mockedFranc).toHaveBeenCalledWith(
-      '![中文截图]( )\n这是一条中文评论。'
-    )
+    expect(mockedFranc).toHaveBeenCalledWith(detectionText)
   })
 
   test('keeps visible English markdown text when removing its URL', () => {
     const body =
       '![screenshot](https://github.com/owner/repo/assets/12345678/abcdef)\nPlease review this change.'
+    const detectionText = getLanguageDetectionText(body)
 
-    expect(getLanguageDetectionText(body)).toBe(
-      '![screenshot]( )\nPlease review this change.'
-    )
+    expect(detectionText).toContain('screenshot')
+    expect(detectionText).toContain('Please review this change.')
+    expect(detectionText).not.toContain('https://')
 
     mockedFranc.mockReturnValue('eng')
     expect(isEnglishText(body)).toBe(true)
+    expect(mockedFranc).toHaveBeenCalledWith(detectionText)
+  })
+
+  test('keeps Markdown labels while excluding code, destinations, and commit SHAs from detection', () => {
+    const body = `请查看[发布说明](https://example.com/release)和![截图说明](https://example.com/image.png)。
+
+内联代码：\`internalOnly()\`
+
+\`\`\`ts
+const ignoredCode = '不要用于识别'
+\`\`\`
+
+提交 6d6182d618435253a4416a6c10c9c98c2ce04365 已完成。`
+
+    const detectionText = getLanguageDetectionText(body)
+
+    expect(detectionText).toContain('请查看')
+    expect(detectionText).toContain('发布说明')
+    expect(detectionText).toContain('截图说明')
+    expect(detectionText).toContain('已完成')
+    expect(detectionText).not.toContain('https://')
+    expect(detectionText).not.toContain('internalOnly')
+    expect(detectionText).not.toContain('ignoredCode')
+    expect(detectionText).not.toContain(
+      '6d6182d618435253a4416a6c10c9c98c2ce04365'
+    )
+    expect(detectionText).not.toMatch(/\s{2,}/)
   })
 
   test('treats null text as already handled', () => {
@@ -373,6 +402,65 @@ describe('issues translate action helpers', () => {
     expect(
       getTranslationTarget('Please review this change.', languageConfig)
     ).toBe('zh-CN')
+  })
+
+  test('routes the affected Chinese technical comment to the secondary language even when franc reports French', () => {
+    const languageConfig = getLanguageConfig('zh-CN', 'en')
+    const body = `这个提交 6d6182d618435253a4416a6c10c9c98c2ce04365 将 \`changelog/<version>.md\` 设为 Release Notes 的唯一内容来源。
+
+主要改动：
+
+- GitHub Release 直接使用对应版本的 changelog Markdown。
+- Sparkle appcast 从同一文件生成内嵌 HTML 更新日志。
+- 发布流程会校验文件是否已提交。`
+
+    mockedFranc.mockReturnValue('fra')
+
+    expect(getTranslationTarget(body, languageConfig)).toBe('en')
+    expect(mockedFranc).not.toHaveBeenCalled()
+  })
+
+  test('falls back to franc for English text containing only a small amount of Chinese', () => {
+    const languageConfig = getLanguageConfig('en', 'zh-CN')
+    const body =
+      'Please review the release implementation carefully before merging the changelog, appcast, tests, and all related documentation. 请看'
+
+    mockedFranc.mockReturnValue('eng')
+
+    expect(getTranslationTarget(body, languageConfig)).toBe('zh-CN')
+    expect(mockedFranc).toHaveBeenCalledWith(getLanguageDetectionText(body))
+  })
+
+  test('recognizes Japanese Kana in technical text before franc fallback', () => {
+    const languageConfig = getLanguageConfig('ja', 'en')
+    const body =
+      'Please review the release implementation, tests, changelog, and documentation before merging. これは変更内容を確認するためのレビューコメントです。'
+
+    mockedFranc.mockReturnValue('fra')
+
+    expect(getTranslationTarget(body, languageConfig)).toBe('en')
+    expect(mockedFranc).not.toHaveBeenCalled()
+  })
+
+  test('recognizes Korean Hangul in technical text before franc fallback', () => {
+    const languageConfig = getLanguageConfig('ko', 'en')
+    const body =
+      'Review release notes before merging. 이 변경 사항을 검토해 주세요.'
+
+    mockedFranc.mockReturnValue('fra')
+
+    expect(getTranslationTarget(body, languageConfig)).toBe('en')
+    expect(mockedFranc).not.toHaveBeenCalled()
+  })
+
+  test('falls back to franc for Han-only text that could be Chinese or Japanese', () => {
+    const languageConfig = getLanguageConfig('ja', 'en')
+    const body = '修正内容確認必要'
+
+    mockedFranc.mockReturnValue('jpn')
+
+    expect(getTranslationTarget(body, languageConfig)).toBe('en')
+    expect(mockedFranc).toHaveBeenCalledWith(getLanguageDetectionText(body))
   })
 
   test('accepts Google language codes without a standard ISO mapping', () => {
@@ -432,6 +520,20 @@ describe('issues translate action helpers', () => {
     mockedTranslate.mockResolvedValue({text: 'Already English.'})
 
     await expect(translateIssueOrigin('Already English.')).resolves.toBe('')
+  })
+
+  test('returns an empty string when translation changes only line endings and Unicode normalization', async () => {
+    mockedTranslate.mockResolvedValue({text: 'Café\n第二行'})
+
+    await expect(translateIssueOrigin('Cafe\u0301\r\n第二行')).resolves.toBe('')
+  })
+
+  test('preserves a translation that removes a Markdown hard line break', async () => {
+    mockedTranslate.mockResolvedValue({text: '第一行\n第二行'})
+
+    await expect(translateIssueOrigin('第一行  \r\n第二行')).resolves.toBe(
+      '第一行\n第二行'
+    )
   })
 
   test('propagates a rejected batch translation request', async () => {
@@ -583,6 +685,42 @@ describe('issues translate action helpers', () => {
     await run()
 
     expect(mockedTranslate).not.toHaveBeenCalled()
+    expect(mockedCore.setFailed).not.toHaveBeenCalled()
+  })
+
+  test('does not create a comment when translation only normalizes line endings and Unicode', async () => {
+    const createComment = jest.fn()
+    const octokit = {rest: {issues: {createComment}}}
+    mockedCore.getInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        BOT_GITHUB_TOKEN: 'token',
+        BOT_LOGIN_NAME: 'translator-bot',
+        PRIMARY_LANGUAGE: 'en'
+      }
+      return inputs[name] ?? ''
+    })
+    Object.assign(mockedGithub.context, {
+      eventName: 'issue_comment',
+      repo: {owner: 'owner', repo: 'repo'},
+      payload: {
+        action: 'created',
+        issue: {number: 10},
+        comment: {
+          id: 101,
+          body: 'Cafe\u0301\r\n第二行',
+          user: {login: 'contributor'}
+        }
+      }
+    })
+    mockedGithub.getOctokit.mockReturnValue(
+      (octokit as unknown) as ReturnType<typeof github.getOctokit>
+    )
+    mockedFranc.mockReturnValue('cmn')
+    mockedTranslate.mockResolvedValue({text: 'Café\n第二行'})
+
+    await run()
+
+    expect(createComment).not.toHaveBeenCalled()
     expect(mockedCore.setFailed).not.toHaveBeenCalled()
   })
 

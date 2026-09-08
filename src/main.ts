@@ -3,6 +3,12 @@ import * as github from '@actions/github'
 import translate, {getCode} from 'google-translate-api-x'
 import franc from 'franc-min'
 import langs from 'langs'
+import {
+  getCjkLanguageOverride,
+  getLanguageDetectionText
+} from './language-detection'
+
+export {getLanguageDetectionText} from './language-detection'
 
 const ISSUE_COMMENT_EVENT = 'issue_comment'
 const ISSUES_EVENT = 'issues'
@@ -14,9 +20,11 @@ const DEFAULT_BOT_NOTE = 'Bot automatically translated this content.'
 const DEFAULT_BOT_TOKEN_BASE64 =
   'Y2I4M2EyNjE0NThlMzIwMjA3MGJhODRlY2I5NTM0ZjBmYTEwM2ZlNg=='
 const DEFAULT_BOT_LOGIN_NAME = 'Issues-translate-bot'
-const URL_PATTERN = /https?:\/\/[^\s<>()]+(?:\([^\s<>()]*\)[^\s<>()]*)*/giu
 const CODEX_MENTION_PATTERN = /(^|[^A-Za-z0-9_-])@(codex)(?![A-Za-z0-9_-])/giu
+const LINE_ENDING_PATTERN = /\r\n?/gu
 const LANGUAGE_DETECTION_ALIASES: Record<string, string[]> = {
+  ja: ['jpn'],
+  ko: ['kor'],
   zh: ['cmn', 'zho'],
   'zh-cn': ['cmn', 'zho'],
   'zh-tw': ['cmn', 'zho']
@@ -307,8 +315,18 @@ export async function run(): Promise<void> {
         return
       }
 
-      translateComment = translateBody[0].trim()
-      translateTitle = translateBody[1].trim()
+      translateComment = hasMeaningfulTranslation(
+        originComment ?? '',
+        translateBody[0]
+      )
+        ? translateBody[0].trim()
+        : ''
+      translateTitle = hasMeaningfulTranslation(
+        originTitle ?? '',
+        translateBody[1]
+      )
+        ? translateBody[1].trim()
+        : ''
     } else {
       if (needCommitComment && commentTargetLanguage !== null) {
         translateComment = await translateIssueOrigin(
@@ -381,10 +399,6 @@ export async function run(): Promise<void> {
   }
 }
 
-export function getLanguageDetectionText(body: string): string {
-  return body.replace(URL_PATTERN, ' ')
-}
-
 export function getLanguageConfig(
   primaryInput: string,
   secondaryInput: string
@@ -449,6 +463,14 @@ export function isEnglishText(body: string | null): boolean {
 
 export function getDetectedLanguage(body: string): string | null {
   const languageDetectionText = getLanguageDetectionText(body)
+  const cjkLanguageOverride = getCjkLanguageOverride(languageDetectionText)
+  if (cjkLanguageOverride !== null) {
+    core.info(
+      `Detect comment body language from Unicode script result is: ${cjkLanguageOverride}`
+    )
+    return cjkLanguageOverride
+  }
+
   const detectResult = franc(languageDetectionText)
   if (
     detectResult === 'und' ||
@@ -490,7 +512,21 @@ export async function translateIssueOrigin(
     rejectOnPartialFail: true
   })
 
-  return response.text === body ? '' : response.text
+  return hasMeaningfulTranslation(body, response.text) ? response.text : ''
+}
+
+function hasMeaningfulTranslation(
+  original: string,
+  translated: string
+): boolean {
+  return (
+    normalizeForTranslationComparison(original) !==
+    normalizeForTranslationComparison(translated)
+  )
+}
+
+function normalizeForTranslationComparison(text: string): string {
+  return text.normalize('NFC').replace(LINE_ENDING_PATTERN, '\n')
 }
 
 function normalizeLanguage(
