@@ -67,6 +67,13 @@ CUSTOM_BOT_NOTE: Bot automatically translated this content.
 `issues(opened)` event replaces the original title. It does not control whether
 the title or comment is translated.
 
+### Codex mentions in translated comments
+
+To prevent a translated bot comment from unintentionally invoking Codex, an
+independent `@codex` in a generated comment has a zero-width space inserted
+after `@`. It looks the same in GitHub, but it is not a Codex command. Enter
+the original command manually when you intend to invoke Codex.
+
 
 ## Advanced Custom   
 

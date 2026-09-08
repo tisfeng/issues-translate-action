@@ -15,6 +15,7 @@ const DEFAULT_BOT_TOKEN_BASE64 =
   'Y2I4M2EyNjE0NThlMzIwMjA3MGJhODRlY2I5NTM0ZjBmYTEwM2ZlNg=='
 const DEFAULT_BOT_LOGIN_NAME = 'Issues-translate-bot'
 const URL_PATTERN = /https?:\/\/[^\s<>()]+(?:\([^\s<>()]*\)[^\s<>()]*)*/giu
+const CODEX_MENTION_PATTERN = /(^|[^A-Za-z0-9_-])@(codex)(?![A-Za-z0-9_-])/giu
 const LANGUAGE_DETECTION_ALIASES: Record<string, string[]> = {
   zh: ['cmn', 'zho'],
   'zh-cn': ['cmn', 'zho'],
@@ -182,6 +183,13 @@ ${translateComment ?? ''}
 ----    
 ${translateComment ?? ''}  
       `
+}
+
+export function neutralizeCodexMentions(body: string): string {
+  return body.replace(
+    CODEX_MENTION_PATTERN,
+    (_match, prefix: string, mention: string) => `${prefix}@\u200B${mention}`
+  )
 }
 
 export function isInputEnabled(input: string): boolean {
@@ -354,12 +362,17 @@ export async function run(): Promise<void> {
       botNote
     )
 
+    const safeTranslateCommentBody =
+      translateCommentBody === null
+        ? null
+        : neutralizeCodexMentions(translateCommentBody)
+
     if (isModifyTitle && translateTitle !== null && needCommitTitle) {
       await modifyTitle(issueNumber, translateTitle, octokit)
     }
 
-    if (translateCommentBody !== null) {
-      await createComment(commentTarget, translateCommentBody, octokit)
+    if (safeTranslateCommentBody !== null) {
+      await createComment(commentTarget, safeTranslateCommentBody, octokit)
     }
 
     core.setOutput('complete time', new Date().toTimeString())

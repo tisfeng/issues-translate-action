@@ -53,6 +53,7 @@ import {
   getTranslationContext,
   isInputEnabled,
   isEnglishText,
+  neutralizeCodexMentions,
   run,
   shouldHandleEvent,
   translateIssueOrigin
@@ -264,6 +265,29 @@ describe('issues translate action helpers', () => {
     expect(
       buildTranslateBody(null, null, false, false, false, 'Bot note')
     ).toBeNull()
+  })
+
+  test('neutralizes standalone Codex mentions without changing their visible text', () => {
+    expect(
+      neutralizeCodexMentions(
+        '请运行 @codex review，然后执行 @CODEX security review。'
+      )
+    ).toBe(
+      '请运行 @\u200Bcodex review，然后执行 @\u200BCODEX security review。'
+    )
+  })
+
+  test('preserves email addresses, longer logins, and other mentions', () => {
+    const body =
+      'Contact maintainer@codex.example, @codex-helper, @codex123, @codex_dev, and @reviewer.'
+
+    expect(neutralizeCodexMentions(body)).toBe(body)
+  })
+
+  test('does not add another zero-width space to an already neutralized Codex mention', () => {
+    const body = '@\u200Bcodex review'
+
+    expect(neutralizeCodexMentions(neutralizeCodexMentions(body))).toBe(body)
   })
 
   test('parses boolean-like inputs', () => {
@@ -559,6 +583,53 @@ describe('issues translate action helpers', () => {
     await run()
 
     expect(mockedTranslate).not.toHaveBeenCalled()
+    expect(mockedCore.setFailed).not.toHaveBeenCalled()
+  })
+
+  test('translates Codex issue comments but safely neutralizes their final reply body', async () => {
+    const createComment = jest.fn()
+    const octokit = {rest: {issues: {createComment}}}
+    mockedCore.getInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        BOT_GITHUB_TOKEN: 'token',
+        BOT_LOGIN_NAME: 'Issues-translate-bot',
+        PRIMARY_LANGUAGE: 'en',
+        CUSTOM_BOT_NOTE: 'Translation of @codex content.'
+      }
+      return inputs[name] ?? ''
+    })
+    Object.assign(mockedGithub.context, {
+      eventName: 'issue_comment',
+      repo: {owner: 'owner', repo: 'repo'},
+      payload: {
+        action: 'created',
+        issue: {number: 1283},
+        comment: {
+          id: 321,
+          body: '请审查这个改动。',
+          user: {login: 'chatgpt-codex-connector[bot]'}
+        }
+      }
+    })
+    mockedGithub.getOctokit.mockReturnValue(
+      (octokit as unknown) as ReturnType<typeof github.getOctokit>
+    )
+    mockedFranc.mockReturnValue('cmn')
+    mockedTranslate.mockResolvedValue({text: '@codex review this change.'})
+
+    await run()
+
+    expect(mockedTranslate).toHaveBeenCalledWith('请审查这个改动。', {
+      to: 'en',
+      forceBatch: true,
+      rejectOnPartialFail: true
+    })
+    expect(createComment).toHaveBeenCalledTimes(1)
+    const body = createComment.mock.calls[0][0].body as string
+    expect(body).toContain('@\u200Bcodex review this change.')
+    expect(body).toContain('Translation of @\u200Bcodex content.')
+    expect(body).not.toContain('@codex review')
+    expect(body).not.toContain('Translation of @codex content.')
     expect(mockedCore.setFailed).not.toHaveBeenCalled()
   })
 })

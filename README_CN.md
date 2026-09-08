@@ -61,6 +61,12 @@ CUSTOM_BOT_NOTE: Bot automatically translated this content.
 `IS_MODIFY_TITLE` 只决定 `issues(opened)` 事件中翻译后的标题是否直接覆盖原标题；
 它不决定标题或评论是否需要翻译。
 
+### 译文中的 Codex mention
+
+为防止翻译机器人评论意外调用 Codex，生成评论中的独立 `@codex` 会在 `@` 后插入
+零宽空格。它在 GitHub 页面上的显示不变，但不会成为 Codex 指令；需要调用 Codex
+时，请手动输入原始命令。
+
 
 ## 高级自定义       
 
@@ -126,5 +132,4 @@ Project -> Settings -> Manage access -> Invite a collaborator
 11. [gorse](https://github.com/gorse-io/gorse) - An open source recommender system service written in Go
 
 **Have Fun!**  
-
 

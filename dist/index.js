@@ -42,7 +42,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.translateIssueOrigin = exports.formatTranslationError = exports.getDetectedLanguage = exports.isEnglishText = exports.getTranslationTarget = exports.getLanguageConfig = exports.getLanguageDetectionText = exports.run = exports.isInputEnabled = exports.buildTranslateBody = exports.getTranslationContext = exports.shouldHandleEvent = void 0;
+exports.translateIssueOrigin = exports.formatTranslationError = exports.getDetectedLanguage = exports.isEnglishText = exports.getTranslationTarget = exports.getLanguageConfig = exports.getLanguageDetectionText = exports.run = exports.isInputEnabled = exports.neutralizeCodexMentions = exports.buildTranslateBody = exports.getTranslationContext = exports.shouldHandleEvent = void 0;
 const core = __importStar(__nccwpck_require__(7484));
 const github = __importStar(__nccwpck_require__(3228));
 const google_translate_api_x_1 = __importStar(__nccwpck_require__(7667));
@@ -58,6 +58,7 @@ const DEFAULT_BOT_NOTE = 'Bot automatically translated this content.';
 const DEFAULT_BOT_TOKEN_BASE64 = 'Y2I4M2EyNjE0NThlMzIwMjA3MGJhODRlY2I5NTM0ZjBmYTEwM2ZlNg==';
 const DEFAULT_BOT_LOGIN_NAME = 'Issues-translate-bot';
 const URL_PATTERN = /https?:\/\/[^\s<>()]+(?:\([^\s<>()]*\)[^\s<>()]*)*/giu;
+const CODEX_MENTION_PATTERN = /(^|[^A-Za-z0-9_-])@(codex)(?![A-Za-z0-9_-])/giu;
 const LANGUAGE_DETECTION_ALIASES = {
     zh: ['cmn', 'zho'],
     'zh-cn': ['cmn', 'zho'],
@@ -147,6 +148,10 @@ ${translateComment !== null && translateComment !== void 0 ? translateComment : 
       `;
 }
 exports.buildTranslateBody = buildTranslateBody;
+function neutralizeCodexMentions(body) {
+    return body.replace(CODEX_MENTION_PATTERN, (_match, prefix, mention) => `${prefix}@\u200B${mention}`);
+}
+exports.neutralizeCodexMentions = neutralizeCodexMentions;
 function isInputEnabled(input) {
     const normalizedInput = input.trim().toLowerCase();
     return (normalizedInput === 'true' ||
@@ -247,11 +252,14 @@ function run() {
                 octokit = github.getOctokit(botToken);
             }
             const translateCommentBody = buildTranslateBody(translateComment, translateTitle, needCommitComment, needCommitTitle, isModifyTitle, botNote);
+            const safeTranslateCommentBody = translateCommentBody === null
+                ? null
+                : neutralizeCodexMentions(translateCommentBody);
             if (isModifyTitle && translateTitle !== null && needCommitTitle) {
                 yield modifyTitle(issueNumber, translateTitle, octokit);
             }
-            if (translateCommentBody !== null) {
-                yield createComment(commentTarget, translateCommentBody, octokit);
+            if (safeTranslateCommentBody !== null) {
+                yield createComment(commentTarget, safeTranslateCommentBody, octokit);
             }
             core.setOutput('complete time', new Date().toTimeString());
         }
