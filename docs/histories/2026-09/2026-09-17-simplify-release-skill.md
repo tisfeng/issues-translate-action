@@ -2,10 +2,10 @@
 
 **Links:** None
 
-### Execution Context
+### 执行上下文
 
 - **Agent Name:** `Codex`
-- **Model ID:** `Unknown`
+- **Model:** `gpt-5.6-sol`
 
 ### 用户请求
 

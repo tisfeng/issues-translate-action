@@ -2,10 +2,10 @@
 
 **Links:** [执行计划](../../exec-plans/completed/2026-09/2026-09-16-agent-documentation-modernization.md)
 
-### Execution Context
+### 执行上下文
 
 - **Agent Name:** `Codex`
-- **Model ID:** `Unknown`
+- **Model:** `gpt-5.6-sol`
 
 ### 用户请求
 

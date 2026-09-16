@@ -2,10 +2,10 @@
 
 **Links:** `docs/exec-plans/completed/2026-09/2026-09-17-release-skill-migration.md`
 
-### Execution Context
+### 执行上下文
 
 - **Agent Name:** `Codex`
-- **Model ID:** `Unknown`
+- **Model:** `gpt-5.6-sol`
 
 ### 用户请求
 
