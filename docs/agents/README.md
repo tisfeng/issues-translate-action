@@ -33,5 +33,11 @@ reference 保存外部证据；这些历史材料只有被当前任务明确采�
 - 上游版本、安装命令和核验证据记录在
   [`tisfeng-skills.md`](../references/tisfeng-skills.md)；同步后核对来源 tree、目录 hash、lock、
   Skill 测试和项目专属路径。
-- 本项目只采用 `code-simplifier`、`git-commit`、`review`、`review-pr`、`submit-pr` 与
-  `worktree-rebase-merge`；不采用项目级 Codex 子代理或 `fireworks-tech-graph`。
+- 本项目从该上游只采用 `code-simplifier`、`git-commit`、`review`、`review-pr`、`submit-pr`
+  与 `worktree-rebase-merge`；不采用项目级 Codex 子代理或 `fireworks-tech-graph`。
+
+## 项目自有 Skill
+
+`.agents/skills/release/` 是本仓库维护的项目专属发布 Skill，不属于 `tisfeng/skills` 外部快照，
+因此不登记到 `skills-lock.json`，也不纳入第三方通知。发布任务由根 `AGENTS.md` 直接路由到其
+`SKILL.md`；修改时按本仓库规则验证，不使用外部 Skill 安装器覆盖。

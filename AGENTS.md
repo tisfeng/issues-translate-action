@@ -29,4 +29,4 @@
   副作用：`docs/agents/development.md`。
 - 文档分层、plan、history、参考资料、外部 Skills 和同步边界：`docs/agents/README.md`。
 - 产品代码、语言识别、翻译或输出行为：`docs/design-docs/action-architecture.md`。
-- 发布、tag、GitHub Release 与发布后核验：`docs/releases/README.md`。
+- 发布、tag、GitHub Release 与发布后核验：`.agents/skills/release/SKILL.md`。
