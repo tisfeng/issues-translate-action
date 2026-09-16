@@ -27,7 +27,7 @@
 
 ## 关联计划
 
-- [两阶段目标语言路由执行计划](../../exec-plans/completed/2026-09-04-two-language-routing.md)
+- [两阶段目标语言路由执行计划](../../exec-plans/completed/2026-09/2026-09-04-two-language-routing.md)
 
 ## 后续更正（2026-09-05）
 

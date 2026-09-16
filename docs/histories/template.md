@@ -1,28 +1,42 @@
-# <任务标题>
+## YYYY-MM-DD | 任务：<简短动作>
 
-<!-- 文件名：YYYY-MM-DD-<slug>.md；<slug> 使用小写 kebab-case。 -->
+<!-- 文件名：YYYY-MM-DD-<slug>.md；命名规则见 docs/agents/README.md 的“Plan 与 History”。 -->
 
-- 日期：YYYY-MM-DD
-- 状态：completed
-- 关联 Issue/PR：<link or none>
-- 执行计划：<path or none>
+**Links:** <issue、PR、计划或 commit>
 
-## 用户目标
+### Execution Context
 
-简要说明用户授权的结果与范围。
+<!--
+- Agent Name：填写主执行 agent 的明确名称，不填客户端、会话 ID 或内部角色。
+- Model ID：填写当前任务明确提供的完整模型 ID；不得缩写或推测，无法确认时填 Unknown。
+- 环境信息仅在影响结果时写入“验证”。
+-->
 
-## 设计意图
+- **Agent Name:** `<name>`
+- **Model ID:** `<model-id or Unknown>`
 
-- 记录为什么采用当前方案。
+### 用户请求
 
-## 主要变更
+<对请求进行简洁且已脱敏的总结。>
 
-- 记录关键设计选择和受影响路径。
+### 变更
 
-## 验证
+- <主要变更>
+- <文档或测试变更>
 
-- 记录实际运行的检查、结果与未运行项。
+### 设计意图
 
-## 后续事项
+<说明为什么采用这种方案，以及它保留了哪个边界。>
 
-- 没有则写“无”。
+### 验证
+
+- `<command>`：<结果>
+- 手动检查：<结果>
+
+### 受影响文件
+
+- `<path>`
+
+### 后续事项
+
+- <已知限制或下一步；如果没有则填写 `None`>

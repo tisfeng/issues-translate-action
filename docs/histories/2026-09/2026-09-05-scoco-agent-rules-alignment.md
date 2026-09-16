@@ -3,7 +3,7 @@
 - 日期：2026-09-05
 - 状态：completed
 - 关联 Issue/PR：none
-- 执行计划：[`docs/exec-plans/completed/2026-09-05-scoco-agent-rules-alignment.md`](../../exec-plans/completed/2026-09-05-scoco-agent-rules-alignment.md)
+- 执行计划：[`docs/exec-plans/completed/2026-09/2026-09-05-scoco-agent-rules-alignment.md`](../../exec-plans/completed/2026-09/2026-09-05-scoco-agent-rules-alignment.md)
 
 ## 用户目标
 

@@ -3,7 +3,7 @@
 - 日期：2026-09-09
 - 状态：completed
 - 关联 Issue/PR：[Easydict PR #1283](https://github.com/tisfeng/Easydict/pull/1283)
-- 执行计划：[`../../exec-plans/completed/2026-09-09-cjk-language-detection.md`](../../exec-plans/completed/2026-09-09-cjk-language-detection.md)
+- 执行计划：[`../../exec-plans/completed/2026-09/2026-09-09-cjk-language-detection.md`](../../exec-plans/completed/2026-09/2026-09-09-cjk-language-detection.md)
 
 ## 用户目标
 

@@ -37,5 +37,5 @@
   服务发起真实请求。静态验证与真实服务验证必须分开报告。
 - `src/main.ts` 是手写源，`dist/index.js` 是 Node 24 Action 的运行入口；两者必须在同一变更中
   保持同步。修改事件路由、输入、评论目标、标题行为、翻译服务或语言识别时，更新测试和
-  [`docs/architecture/overview.md`](../architecture/overview.md)。
+  [`action-architecture.md`](../design-docs/action-architecture.md)。
 - 修改用户可见配置或行为时，检查并同步受影响的 `README.md` 与 `README_CN.md`。

@@ -4,5 +4,4 @@
 
 ## 当前参考
 
-- [`tisfeng-skills.md`](tisfeng-skills.md)：记录通用 Skills 与 Codex 子代理的版本化来源和
-  已核验基线。
+- [`tisfeng-skills.md`](tisfeng-skills.md)：记录通用 Skills 的版本化来源、安装器和已核验基线。

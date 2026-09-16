@@ -1,9 +1,18 @@
 # 设计文档
 
-本目录记录需要长期维护的设计决策，说明为什么采用某项重要的架构或治理边界。实现事实位于
-`docs/architecture/`，任务进度位于 `docs/exec-plans/`。
+本目录统一保存本 Action 的产品与技术设计，以及需要长期维护的设计决策。当前 Agent 执行规则
+仍以根 `AGENTS.md` 和 `docs/agents/` 为权威；任务进度和完成结果分别位于
+`docs/exec-plans/` 与 `docs/histories/`。
 
-## 当前设计
+## 产品与技术设计
+
+- [`action-architecture.md`](action-architecture.md)：事件、语言识别、翻译、GitHub 写入和
+  `src`/`dist` 运行时边界。
+
+## Agent 与仓库治理
 
 - [`external-agent-assets-management.md`](external-agent-assets-management.md)：说明通用 Skills
-  与 Codex 子代理的版本化治理边界。
+  的版本化治理边界。
+
+产品与技术设计随实现更新；长期设计决策保留状态、日期、背景、取舍和重新评估条件。本目录
+不保存任务日志或公共使用说明，也不作为第二套 Agent 任务路由。

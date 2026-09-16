@@ -16,7 +16,7 @@
 - 意图模式：implementation
 - 交付授权：auto-local-commit
 - 安全状态：normal
-- 同任务 history：[`../../histories/2026-09/2026-09-16-skip-self-comments-before-detection.md`](../../histories/2026-09/2026-09-16-skip-self-comments-before-detection.md)
+- 同任务 history：[`../../../histories/2026-09/2026-09-16-skip-self-comments-before-detection.md`](../../../histories/2026-09/2026-09-16-skip-self-comments-before-detection.md)
 - 禁止动作：未修改消费仓库 workflow，未引入 `GITHUB_TOKEN`，未触发真实 workflow、评论
   写入或翻译请求，未推送或发布。
 

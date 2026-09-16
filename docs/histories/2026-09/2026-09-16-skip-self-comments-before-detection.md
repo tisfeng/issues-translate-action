@@ -3,7 +3,7 @@
 - 日期：2026-09-16
 - 状态：completed
 - 关联 Issue/PR：[Easydict Issue #1318](https://github.com/tisfeng/Easydict/issues/1318)
-- 执行计划：[`../../exec-plans/completed/2026-09-16-skip-self-comments-before-detection.md`](../../exec-plans/completed/2026-09-16-skip-self-comments-before-detection.md)
+- 执行计划：[`../../exec-plans/completed/2026-09/2026-09-16-skip-self-comments-before-detection.md`](../../exec-plans/completed/2026-09/2026-09-16-skip-self-comments-before-detection.md)
 
 ## 用户目标
 

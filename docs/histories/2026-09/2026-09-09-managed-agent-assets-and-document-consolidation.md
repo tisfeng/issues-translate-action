@@ -3,7 +3,7 @@
 - 日期：2026-09-09
 - 状态：completed
 - 关联 Issue/PR：none
-- 执行计划：[`../../exec-plans/completed/2026-09-09-managed-agent-assets-and-document-consolidation.md`](../../exec-plans/completed/2026-09-09-managed-agent-assets-and-document-consolidation.md)
+- 执行计划：[`../../exec-plans/completed/2026-09/2026-09-09-managed-agent-assets-and-document-consolidation.md`](../../exec-plans/completed/2026-09/2026-09-09-managed-agent-assets-and-document-consolidation.md)
 
 ## 用户目标
 

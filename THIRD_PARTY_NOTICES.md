@@ -1,9 +1,9 @@
 # 第三方通知
 
-## `tisfeng/skills v0.3.0`
+## `tisfeng/skills v0.6.0`
 
 本仓库包含 `code-simplifier`、`git-commit`、`review`、`review-pr`、`submit-pr` 与
-`worktree-rebase-merge` 的完整受管快照，以及对应 Codex agent 配置。
+`worktree-rebase-merge` 的完整受管快照。
 
 Copyright (c) 2026 tisfeng
 

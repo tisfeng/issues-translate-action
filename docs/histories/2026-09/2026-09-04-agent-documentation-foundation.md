@@ -3,7 +3,7 @@
 - 日期：2026-09-04
 - 状态：completed
 - 关联 Issue/PR：none
-- 执行计划：[`docs/exec-plans/completed/2026-09-04-agent-documentation-foundation.md`](../../exec-plans/completed/2026-09-04-agent-documentation-foundation.md)
+- 执行计划：[`docs/exec-plans/completed/2026-09/2026-09-04-agent-documentation-foundation.md`](../../exec-plans/completed/2026-09/2026-09-04-agent-documentation-foundation.md)
 
 ## 用户目标
 

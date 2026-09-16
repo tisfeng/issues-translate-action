@@ -27,7 +27,7 @@
 - Branch：`main`
 - Staged、unstaged：无
 - 任务前已有 untracked：
-  - `docs/exec-plans/completed/2026-09-04-v2-8-3-release.md`
+  - `docs/exec-plans/completed/2026-09/2026-09-04-v2-8-3-release.md`
   - `docs/histories/2026-09/2026-09-04-v2-8-3-release.md`
 - 本任务 Agent-owned paths：本计划、同任务 history，以及请求范围内的代码、测试、文档、依赖和 `dist/` 产物。
 

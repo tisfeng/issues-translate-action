@@ -15,7 +15,7 @@ script 并误判为法语，导致 `PRIMARY_LANGUAGE: zh-CN` 的内容被请求�
 - 意图模式：implementation
 - 交付授权：auto-local-commit
 - 安全状态：normal
-- 同任务 history：[`../../histories/2026-09/2026-09-09-cjk-language-detection.md`](../../histories/2026-09/2026-09-09-cjk-language-detection.md)
+- 同任务 history：[`../../../histories/2026-09/2026-09-09-cjk-language-detection.md`](../../../histories/2026-09/2026-09-09-cjk-language-detection.md)
 - 禁止动作：未发布版本、未移动 tag、未推送、未更新消费仓库、未触发真实 workflow 或翻译请求。
 
 ## 完成内容
