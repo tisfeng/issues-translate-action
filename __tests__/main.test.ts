@@ -660,17 +660,22 @@ const ignoredCode = '不要用于识别'
     expect(createComment).toHaveBeenCalledTimes(1)
   })
 
-  test('does not translate an English comment created by the configured bot', async () => {
-    mockedCore.getInput.mockImplementation((name: string) => {
-      if (name === 'SECONDARY_LANGUAGE') {
-        return 'zh-CN'
+  test.each([
+    [
+      'issue_comment',
+      {
+        action: 'created',
+        issue: {number: 7},
+        comment: {
+          id: 99,
+          body: 'Please review this change.',
+          user: {login: 'Issues-translate-bot'}
+        }
       }
-      return ''
-    })
-    Object.assign(mockedGithub.context, {
-      eventName: 'pull_request_review_comment',
-      repo: {owner: 'owner', repo: 'repo'},
-      payload: {
+    ],
+    [
+      'pull_request_review_comment',
+      {
         action: 'created',
         pull_request: {number: 7},
         comment: {
@@ -679,11 +684,97 @@ const ignoredCode = '不要用于识别'
           user: {login: 'Issues-translate-bot'}
         }
       }
+    ]
+  ])(
+    'skips the default bot %s comment before language detection or GitHub writes',
+    async (eventName, payload) => {
+      mockedCore.getInput.mockImplementation((name: string) => {
+        if (name === 'SECONDARY_LANGUAGE') {
+          return 'zh-CN'
+        }
+        return ''
+      })
+      Object.assign(mockedGithub.context, {
+        eventName,
+        repo: {owner: 'owner', repo: 'repo'},
+        payload
+      })
+
+      await run()
+
+      expect(mockedFranc).not.toHaveBeenCalled()
+      expect(mockedTranslate).not.toHaveBeenCalled()
+      expect(mockedGithub.getOctokit).not.toHaveBeenCalled()
+      expect(mockedCore.setFailed).not.toHaveBeenCalled()
+    }
+  )
+
+  test('skips a configured bot comment regardless of login casing', async () => {
+    mockedCore.getInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        BOT_GITHUB_TOKEN: 'token',
+        BOT_LOGIN_NAME: 'Translator-Bot',
+        PRIMARY_LANGUAGE: 'en',
+        SECONDARY_LANGUAGE: 'zh-CN'
+      }
+      return inputs[name] ?? ''
     })
-    mockedFranc.mockReturnValue('eng')
+    Object.assign(mockedGithub.context, {
+      eventName: 'issue_comment',
+      repo: {owner: 'owner', repo: 'repo'},
+      payload: {
+        action: 'created',
+        issue: {number: 7},
+        comment: {
+          id: 99,
+          body: 'Please review this change.',
+          user: {login: 'translator-bot'}
+        }
+      }
+    })
 
     await run()
 
+    expect(mockedFranc).not.toHaveBeenCalled()
+    expect(mockedTranslate).not.toHaveBeenCalled()
+    expect(mockedGithub.getOctokit).not.toHaveBeenCalled()
+    expect(mockedCore.setFailed).not.toHaveBeenCalled()
+  })
+
+  test('resolves a custom token owner before detecting its comment language', async () => {
+    const request = jest.fn().mockResolvedValue({
+      data: {login: 'translator-bot'}
+    })
+    const octokit = {request}
+    mockedCore.getInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        BOT_GITHUB_TOKEN: 'token',
+        PRIMARY_LANGUAGE: 'en',
+        SECONDARY_LANGUAGE: 'zh-CN'
+      }
+      return inputs[name] ?? ''
+    })
+    Object.assign(mockedGithub.context, {
+      eventName: 'issue_comment',
+      repo: {owner: 'owner', repo: 'repo'},
+      payload: {
+        action: 'created',
+        issue: {number: 7},
+        comment: {
+          id: 99,
+          body: 'Please review this change.',
+          user: {login: 'translator-bot'}
+        }
+      }
+    })
+    mockedGithub.getOctokit.mockReturnValue(
+      (octokit as unknown) as ReturnType<typeof github.getOctokit>
+    )
+
+    await run()
+
+    expect(request).toHaveBeenCalledWith('GET /user')
+    expect(mockedFranc).not.toHaveBeenCalled()
     expect(mockedTranslate).not.toHaveBeenCalled()
     expect(mockedCore.setFailed).not.toHaveBeenCalled()
   })

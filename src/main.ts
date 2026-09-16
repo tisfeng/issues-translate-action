@@ -239,6 +239,26 @@ export async function run(): Promise<void> {
       commentTarget
     } = translationContext
 
+    let botToken = core.getInput('BOT_GITHUB_TOKEN')
+    let botLoginName = core.getInput('BOT_LOGIN_NAME')
+    if (botToken === '') {
+      botToken = Buffer.from(DEFAULT_BOT_TOKEN_BASE64, 'base64').toString()
+      botLoginName = DEFAULT_BOT_LOGIN_NAME
+    }
+
+    let octokit: Octokit | null = null
+    if (botLoginName === '') {
+      octokit = github.getOctokit(botToken)
+      const botInfo = await octokit.request('GET /user')
+      botLoginName = botInfo.data.login
+    }
+    if (botLoginName.toLowerCase() === issueUser.toLowerCase()) {
+      core.info(
+        `The comment user is bot ${botLoginName} himself, ignore return.`
+      )
+      return
+    }
+
     let botNote = DEFAULT_BOT_NOTE
     const isModifyTitle = isInputEnabled(core.getInput('IS_MODIFY_TITLE'))
     const languageConfig = getLanguageConfig(
@@ -261,29 +281,9 @@ export async function run(): Promise<void> {
       return
     }
 
-    let botToken = core.getInput('BOT_GITHUB_TOKEN')
-    let botLoginName = core.getInput('BOT_LOGIN_NAME')
-    if (botToken === '') {
-      botToken = Buffer.from(DEFAULT_BOT_TOKEN_BASE64, 'base64').toString()
-      botLoginName = DEFAULT_BOT_LOGIN_NAME
-    }
-
     const customBotMessage = core.getInput('CUSTOM_BOT_NOTE').trim()
     if (customBotMessage !== '') {
       botNote = customBotMessage
-    }
-
-    let octokit: Octokit | null = null
-    if (botLoginName === '') {
-      octokit = github.getOctokit(botToken)
-      const botInfo = await octokit.request('GET /user')
-      botLoginName = botInfo.data.login
-    }
-    if (botLoginName === issueUser) {
-      core.info(
-        `The comment user is bot ${botLoginName} himself, ignore return.`
-      )
-      return
     }
 
     let translateComment: string | null = null

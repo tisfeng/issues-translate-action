@@ -279,6 +279,22 @@ function run() {
                 return;
             }
             const { issueNumber, issueUser, originComment, originTitle, commentTarget } = translationContext;
+            let botToken = core.getInput('BOT_GITHUB_TOKEN');
+            let botLoginName = core.getInput('BOT_LOGIN_NAME');
+            if (botToken === '') {
+                botToken = Buffer.from(DEFAULT_BOT_TOKEN_BASE64, 'base64').toString();
+                botLoginName = DEFAULT_BOT_LOGIN_NAME;
+            }
+            let octokit = null;
+            if (botLoginName === '') {
+                octokit = github.getOctokit(botToken);
+                const botInfo = yield octokit.request('GET /user');
+                botLoginName = botInfo.data.login;
+            }
+            if (botLoginName.toLowerCase() === issueUser.toLowerCase()) {
+                core.info(`The comment user is bot ${botLoginName} himself, ignore return.`);
+                return;
+            }
             let botNote = DEFAULT_BOT_NOTE;
             const isModifyTitle = isInputEnabled(core.getInput('IS_MODIFY_TITLE'));
             const languageConfig = getLanguageConfig(core.getInput('PRIMARY_LANGUAGE'), core.getInput('SECONDARY_LANGUAGE'));
@@ -290,25 +306,9 @@ function run() {
                 core.info('Detect the issue do not need translated, return.');
                 return;
             }
-            let botToken = core.getInput('BOT_GITHUB_TOKEN');
-            let botLoginName = core.getInput('BOT_LOGIN_NAME');
-            if (botToken === '') {
-                botToken = Buffer.from(DEFAULT_BOT_TOKEN_BASE64, 'base64').toString();
-                botLoginName = DEFAULT_BOT_LOGIN_NAME;
-            }
             const customBotMessage = core.getInput('CUSTOM_BOT_NOTE').trim();
             if (customBotMessage !== '') {
                 botNote = customBotMessage;
-            }
-            let octokit = null;
-            if (botLoginName === '') {
-                octokit = github.getOctokit(botToken);
-                const botInfo = yield octokit.request('GET /user');
-                botLoginName = botInfo.data.login;
-            }
-            if (botLoginName === issueUser) {
-                core.info(`The comment user is bot ${botLoginName} himself, ignore return.`);
-                return;
             }
             let translateComment = null;
             let translateTitle = null;
