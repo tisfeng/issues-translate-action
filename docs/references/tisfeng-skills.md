@@ -1,10 +1,10 @@
 # `tisfeng/skills` 来源参考
 
-- 核对日期：2026-09-16。
+- 核对日期：2026-09-17。
 - 来源：`https://github.com/tisfeng/skills`。
-- 采用版本：`v0.6.0`。
-- annotated tag object：`1e8cbe576a1558c731a520ef8d008a43be73c46b`。
-- peeled commit：`b4a4791265ca376f3deb4700791cce6e5a470be7`。
+- 采用版本：`v0.6.1`。
+- annotated tag object：`46a1ad4a001609e97b0d5a6a577a786bfe7287d6`。
+- peeled commit：`3105de8b2d6e4e03ebf1d9242d9ed9023978f8b1`。
 - Tag 签名状态：annotated、unsigned；核验时同时固定 tag 和 peeled commit。
 - Skills 安装器：`skills@1.5.25`。
 
@@ -19,6 +19,10 @@
 `v0.5.0` 更新 `submit-pr` 的固定 PR 模板和 detached checkout 支持；`v0.6.0` 更新
 `git-commit` 的本地化正文标记和全局 `References:` 尾段契约。
 
+`v0.6.1` 让 `review-pr` 在当前 GitHub 用户是 PR 作者、同名本地分支可以安全 fast-forward 且
+upstream 仓库与分支等价时复用该分支；其他不安全或身份不明场景仍走 collision fallback。
+`worktree-rebase-merge` 同时移除 UI 展示名称中的斜杠；其余四个受管 Skill 内容不变。
+
 ## 已核验安装形式
 
 `skills@1.5.25` 没有 `--cwd` 选项，必须从目标仓库根目录执行。使用独立的
@@ -26,7 +30,7 @@
 
 ```bash
 npx -y skills@1.5.25 add \
-  https://github.com/tisfeng/skills/tree/v0.6.0 \
+  https://github.com/tisfeng/skills/tree/v0.6.1 \
   --skill code-simplifier git-commit review review-pr submit-pr worktree-rebase-merge \
   --agent codex --yes --copy --full-depth
 ```
@@ -34,6 +38,9 @@ npx -y skills@1.5.25 add \
 `skills-lock.json` 记录 tag、入口路径和内容哈希。同步后重算六个目录并与固定 tag 的 tracked
 tree 比对，同时运行受影响 Skill 的测试与静态检查。`submit-pr` 需要 Python 3.10 或更高版本；
 同一任务的 `plan` 与 `apply` 使用同一个已核验解释器。
+
+2026-09-17 使用 Python 3.12.3 运行内容发生变化的 `review-pr` 53 项测试，并完成 Shell/Python
+语法及两个变更 Skill 的结构校验，全部通过。
 
 ## 重新核对条件
 
