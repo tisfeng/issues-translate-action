@@ -1,6 +1,6 @@
 # 移植工作流 token 认证并发布 v2.9.3
 
-- 状态：active
+- 状态：completed
 - 创建日期：2026-11-02
 - 负责人：Unknown
 - 关联 Issue/PR：https://github.com/dromara/issues-translate-action/pull/109
@@ -46,7 +46,7 @@ Easydict 固定调用 v2.9.2，旧内置机器人凭据在 GitHub 评论写入�
 - [x] 实现、测试、文档和打包。
 - [x] 离线验证和 review。
 - [x] 本地提交前的范围检查及发布准备。
-- [ ] 远程发布核验及 Easydict 依赖更新。
+- [x] v2.9.3 正式发布及归档核验完成；Easydict dev 依赖更新已本地提交。
 
 ## 验证
 
@@ -60,4 +60,8 @@ Easydict 固定调用 v2.9.2，旧内置机器人凭据在 GitHub 评论写入�
 
 ## 完成条件
 
-实现和发布准备验证全部通过后归档；远程发布与消费端更新结果在同任务 history 中补充。
+- 移植、验证和 review 已完成，发布提交 c23b39d03d0829323dc719ba0cf34a791675d21a 已推送。
+- v2.9.3 annotated tag、正式 Latest Release 和源码归档均已核验，无附加 assets。
+- Easydict dev 更新已创建本地提交 a4d2681132b8687702f561f389dfd8cdfc119020，静态验证通过。
+- Easydict push 尚未获单独明确授权；线上生效与真实事件验收不计为已完成。
+

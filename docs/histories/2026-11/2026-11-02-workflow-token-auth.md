@@ -1,6 +1,6 @@
-## 2026-11-02 | 任务：移植工作流 token 默认认证并准备 v2.9.3
+## 2026-11-02 | 任务：移植工作流 token 默认认证并发布 v2.9.3
 
-**Links:** [上游 PR #109](https://github.com/dromara/issues-translate-action/pull/109)、[执行计划](../../exec-plans/active/2026-11-02-workflow-token-auth.md)
+**Links:** [v2.9.3 Release](https://github.com/tisfeng/issues-translate-action/releases/tag/v2.9.3)、[上游 PR #109](https://github.com/dromara/issues-translate-action/pull/109)、[执行计划](../../exec-plans/completed/2026-11/2026-11-02-workflow-token-auth.md)
 
 ### 执行上下文
 
@@ -37,7 +37,11 @@
 - 对原凭据的编码及解码形式扫描：src 与 dist（含 source map）均未残留；未输出凭据值。
 - 使用 review Skill 静态审查认证源码、调用链、输入、测试、生成 bundle、权限和文档，未发现可证实的待修复缺陷。最终复验无无关源码变化。
 - 首轮测试中旧默认机器人 fixture 与新行为不匹配，且新测试的真实 SDK 模块解析不兼容旧 Jest；更新 fixture 和 virtual mock 后通过。
-- 未调用真实翻译服务、未创建 issue/comment、未重跑真实 workflow；远程发布核验待后续记录。
+- 远程 main 已包含发布提交 `c23b39d03d0829323dc719ba0cf34a791675d21a`；annotated tag `v2.9.3` 的 tag object 为 `91ef50fbef62a2ca953b3aaa65fa7da874b1909b`，peeled commit 与发布提交一致，既有 tag 未移动。
+- Release 标题与 tag 均为 v2.9.3，target 为上述发布提交，draft=false、prerelease=false、显式 Latest=true、assets=0。
+- GitHub 源码归档内的 action.yml、src/main.ts、src/github-auth.ts、dist/index.js、source map、sourcemap-register 和 license 与本地已验证内容逐字节一致。
+- Easydict dev 已本地提交 `a4d2681132b8687702f561f389dfd8cdfc119020`，升级到 v2.9.3 并显式声明 issues/pull-requests 写权限；YAML、原事件/输入保留及 diff-check 通过，工作树干净。
+- 未调用真实翻译服务、未创建 issue/comment、未触发或重跑真实 workflow。Easydict 依赖更新尚未推送，线上仍使用旧配置。
 
 ### 受影响文件
 
@@ -50,4 +54,4 @@
 
 ### 后续事项
 
-- 完成离线验证和 review 后创建发布提交，发布 v2.9.3，再更新 Easydict；未触发真实事件测试。
+- Easydict 的本地 dev 更新需要另行获得明确 push 授权后才能上线；之后以自然事件观察运行结果，尚未完成真实评论写入验收。
