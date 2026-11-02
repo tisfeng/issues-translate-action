@@ -669,7 +669,7 @@ const ignoredCode = '不要用于识别'
         comment: {
           id: 99,
           body: 'Please review this change.',
-          user: {login: 'Issues-translate-bot'}
+          user: {login: 'github-actions[bot]'}
         }
       }
     ],
@@ -681,7 +681,7 @@ const ignoredCode = '不要用于识别'
         comment: {
           id: 99,
           body: 'Please review this change.',
-          user: {login: 'Issues-translate-bot'}
+          user: {login: 'github-actions[bot]'}
         }
       }
     ]
@@ -689,6 +689,7 @@ const ignoredCode = '不要用于识别'
     'skips the default bot %s comment before language detection or GitHub writes',
     async (eventName, payload) => {
       mockedCore.getInput.mockImplementation((name: string) => {
+        if (name === 'github-token') return 'workflow-token'
         if (name === 'SECONDARY_LANGUAGE') {
           return 'zh-CN'
         }
@@ -860,5 +861,85 @@ const ignoredCode = '不要用于识别'
     expect(body).not.toContain('@codex review')
     expect(body).not.toContain('Translation of @codex content.')
     expect(mockedCore.setFailed).not.toHaveBeenCalled()
+  })
+
+  test('fails without a token before detection, translation, or GitHub access', async () => {
+    Object.assign(mockedGithub.context, {
+      eventName: 'issues',
+      payload: {
+        action: 'opened',
+        issue: {number: 1, body: '请检查这个问题。', user: {login: 'author'}}
+      }
+    })
+    const originalToken = process.env.GITHUB_TOKEN
+    delete process.env.GITHUB_TOKEN
+    try {
+      await run()
+      expect(mockedCore.setFailed).toHaveBeenCalledWith(
+        expect.stringContaining('A GitHub token is required')
+      )
+      expect(mockedFranc).not.toHaveBeenCalled()
+      expect(mockedTranslate).not.toHaveBeenCalled()
+      expect(mockedGithub.getOctokit).not.toHaveBeenCalled()
+    } finally {
+      if (originalToken !== undefined) process.env.GITHUB_TOKEN = originalToken
+    }
+  })
+
+  test('skips workflow bot comments before translation or API access', async () => {
+    mockedCore.getInput.mockImplementation(name =>
+      name === 'github-token' ? 'workflow-token' : ''
+    )
+    Object.assign(mockedGithub.context, {
+      eventName: 'issue_comment',
+      payload: {
+        action: 'created',
+        issue: {number: 1},
+        comment: {id: 2, body: '译文', user: {login: 'GitHub-Actions[bot]'}}
+      }
+    })
+    await run()
+    expect(mockedCore.setFailed).not.toHaveBeenCalled()
+    expect(mockedFranc).not.toHaveBeenCalled()
+    expect(mockedTranslate).not.toHaveBeenCalled()
+    expect(mockedGithub.getOctokit).not.toHaveBeenCalled()
+  })
+
+  test('uses the workflow token to post without looking up a user', async () => {
+    const createComment = jest.fn()
+    const request = jest
+      .fn()
+      .mockRejectedValue(new Error('GET /user forbidden'))
+    mockedGithub.getOctokit.mockReturnValue(({
+      request,
+      rest: {issues: {createComment}}
+    } as unknown) as ReturnType<typeof github.getOctokit>)
+    mockedCore.getInput.mockImplementation(name => {
+      const inputs: Record<string, string> = {
+        'github-token': 'workflow-token',
+        PRIMARY_LANGUAGE: 'en'
+      }
+      return inputs[name] ?? ''
+    })
+    Object.assign(mockedGithub.context, {
+      eventName: 'issue_comment',
+      repo: {owner: 'owner', repo: 'repo'},
+      payload: {
+        action: 'created',
+        issue: {number: 1},
+        comment: {id: 2, body: '请检查这个问题。', user: {login: 'author'}}
+      }
+    })
+    mockedTranslate.mockResolvedValue({text: 'Please check this issue.'})
+    await run()
+    expect(mockedCore.setFailed).not.toHaveBeenCalled()
+    expect(mockedGithub.getOctokit).toHaveBeenCalledWith('workflow-token')
+    expect(request).not.toHaveBeenCalled()
+    expect(createComment).toHaveBeenCalledWith({
+      owner: 'owner',
+      repo: 'repo',
+      issue_number: 1,
+      body: expect.stringContaining('Please check this issue.')
+    })
   })
 })

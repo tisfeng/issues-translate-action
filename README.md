@@ -6,7 +6,10 @@ The action for translating issues, PR conversation comments, and PR review comme
 
 ## Usage  
 
-> Use the default bot account @Issues-translate-bot  
+默认使用 GitHub 自动提供的工作流 token，以 `github-actions[bot]` 身份发表评论，无需手动创建 token 或添加 Secret。
+Action 不再内置公共机器人凭据。`github-token` 默认是 `${{ github.token }}`，可省略。
+自定义机器人使用 `BOT_GITHUB_TOKEN`，它优先于默认工作流 token；自定义 PAT 的登录名留空时通过 `GET /user` 解析。
+自定义 GitHub App installation token 必须同时设置对应的 `BOT_LOGIN_NAME`。
 
 #### Create a workflow from this action   
 
@@ -25,8 +28,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
-      - uses: usthe/issues-translate-action@v2.7
+      - uses: tisfeng/issues-translate-action@v2.9.3
         with:
           IS_MODIFY_TITLE: false
           # Optional, default false. If true, update a translated issue title directly.
@@ -101,12 +107,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
-      - uses: usthe/issues-translate-action@v2.7
+      - uses: tisfeng/issues-translate-action@v2.9.3
         with:
           BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }} 
           # Required, input your bot github token
-          BOT_LOGIN_NAME: Issues-translate-bot    
+          BOT_LOGIN_NAME: your-bot-login
           # Not required, suggest not input, action will get name from BOT_GITHUB_TOKEN
           # If input, BOT name must match github token
           PRIMARY_LANGUAGE: en
@@ -115,11 +124,14 @@ jobs:
 ````
 
 
-## Other   
+### 认证与权限
 
-1. invite @Issues-translate-bot to your project.    
-Project -> Settings -> Manage access -> Invite a collaborator   
-Post an issue in [issues-translate-action](https://github.com/tomsun28/issues-translate-action) to let us know, the @Issues-translate-bot will join soon.    
+默认 token 只用于当前仓库，工作流必须授予 `issues: write` 和 `pull-requests: write`，分别用于 issue/PR conversation 评论及 review thread 回复。
+缺少 token 时 action 会在语言检测、翻译和 GitHub 写入前失败。
+兼容已有的 `GITHUB_TOKEN` 输入或环境变量；优先级为 `BOT_GITHUB_TOKEN` → `github-token` → `GITHUB_TOKEN` 输入 → `GITHUB_TOKEN` 环境变量。
+由于 `github-token` 有默认值，若需使用兼容项，请显式设置 `github-token: ''`；PAT 或自定义 App 凭据应始终通过 `BOT_GITHUB_TOKEN` 配置。
+使用默认工作流 token 发表的评论不会再次触发 `issue_comment` 工作流；需要触发后续自动化时请使用自己的机器人凭据。
+凭据必须通过 GitHub 自动 token 或 Secrets 提供，不得提交到源码。
 
 ## DEMO  
 

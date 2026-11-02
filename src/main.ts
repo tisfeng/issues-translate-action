@@ -3,6 +3,7 @@ import * as github from '@actions/github'
 import translate, {getCode} from 'google-translate-api-x'
 import franc from 'franc-min'
 import langs from 'langs'
+import {getBotCredentials} from './github-auth'
 import {
   getCjkLanguageOverride,
   getLanguageDetectionText
@@ -17,9 +18,6 @@ const COMMENT_TITLE_SEPARATOR = '@@===='
 const DUAL_PART_TRANSLATION = 2
 const DEFAULT_PRIMARY_LANGUAGE = 'en'
 const DEFAULT_BOT_NOTE = 'Bot automatically translated this content.'
-const DEFAULT_BOT_TOKEN_BASE64 =
-  'Y2I4M2EyNjE0NThlMzIwMjA3MGJhODRlY2I5NTM0ZjBmYTEwM2ZlNg=='
-const DEFAULT_BOT_LOGIN_NAME = 'Issues-translate-bot'
 const CODEX_MENTION_PATTERN = /(^|[^A-Za-z0-9_-])@(codex)(?![A-Za-z0-9_-])/giu
 const LINE_ENDING_PATTERN = /\r\n?/gu
 const LANGUAGE_DETECTION_ALIASES: Record<string, string[]> = {
@@ -239,12 +237,8 @@ export async function run(): Promise<void> {
       commentTarget
     } = translationContext
 
-    let botToken = core.getInput('BOT_GITHUB_TOKEN')
-    let botLoginName = core.getInput('BOT_LOGIN_NAME')
-    if (botToken === '') {
-      botToken = Buffer.from(DEFAULT_BOT_TOKEN_BASE64, 'base64').toString()
-      botLoginName = DEFAULT_BOT_LOGIN_NAME
-    }
+    const {token: botToken, login} = getBotCredentials()
+    let botLoginName = login
 
     let octokit: Octokit | null = null
     if (botLoginName === '') {

@@ -10,11 +10,13 @@ on:
 jobs:
   test: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: ./
-        # with:
-          # BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
         with:
           IS_MODIFY_TITLE: true
           CUSTOM_BOT_NOTE: Bot detected the issue body's language is not English, translate it automatically. 👯👭🏻🧑‍🤝‍🧑👫🧑🏿‍🤝‍🧑🏻👩🏾‍🤝‍👨🏿👬🏿

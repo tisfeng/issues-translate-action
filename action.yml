@@ -5,10 +5,15 @@ branding:
   color: 'orange'
 author: 'tisfeng'
 inputs:
-  BOT_GITHUB_TOKEN: 
-    description: 'The issue comment bot GITHUB_TOKEN.'
+  BOT_GITHUB_TOKEN:
+    description: 'Optional custom bot token. Overrides the workflow token. No built-in bot credential is provided.'
+    required: false
+  github-token:
+    description: 'Workflow token used when BOT_GITHUB_TOKEN is empty. Custom credentials should use BOT_GITHUB_TOKEN.'
+    default: '${{ github.token }}'
+    required: false
   BOT_LOGIN_NAME:
-    description: 'The issue comment bot github login name.'
+    description: 'Optional bot login. Defaults to github-actions[bot] for the workflow token; resolved via GET /user for a custom PAT. Required for a custom GitHub App token.'
   IS_MODIFY_TITLE: 
     description: 'Is need modify issue title, true or false, default false.'
   CUSTOM_BOT_NOTE:
